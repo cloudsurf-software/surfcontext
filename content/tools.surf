@@ -1,0 +1,139 @@
+---
+title: Tools - SurfContext
+description: Tools for creating and managing SurfContext projects — SurfDoc, Surfspace, WaveSite, Surf CLI, and the Surf MCP Server.
+---
+
+::style
+accent: #3b82f6
+font: inter
+::
+
+::hero[align=center]
+# Tools
+
+Create and manage SurfContext projects with these tools.
+::
+
+::section
+## Surfspace
+
+The workspace platform — the reference implementation of the ARDS v4 workspace layer.
+
+::product-card[badge="Available" badge-color=green]
+## Surfspace
+
+Cloud workspaces where knowledge and agent context are the same objects
+
+Surfspace at surf.space implements the ARDS v4.0 workspace layer: five credential-enforced scopes, tasks with the 8-stage lifecycle, agent launch playbooks, and the skill runtime driven by plan documents. Agents connect through the Surf MCP Server with workspace-pinned credentials, and every workspace exports to the ARDS file layer — no lock-in.
+
+- Implements the v4 Workspace Model & Scopes (personal / workspace-private / workspace / repo / public)
+- Tasks & Stages with stage-bound artifacts as agent memory
+- Agent launch with declared tool allow/deny lists and stage-authority ceilings
+- Full export to CONTEXT.md + .context/ — the file layer is always your fallback
+
+[Visit surf.space](https://surf.space)
+::
+::
+
+::section[bg=dark]
+## SurfDoc
+
+The document workspace with native SurfContext support.
+
+::product-card[badge="Available" badge-color=green]
+## SurfDoc
+
+Export your workspace as a SurfContext package
+
+SurfDoc is a typed document format and workspace at doc.surf. Export your entire workspace — docs, tasks, team context, agent configurations — as a SurfContext-conformant package. The exported `CONTEXT.md` and `.context/` directory can be dropped directly into any code repository.
+
+- Generates ARDS v4.0 conformant output
+- Includes version ledger for change tracking
+- Exports agent definitions with proper frontmatter
+- Maps team knowledge to .context/docs/ format
+
+[Visit doc.surf](https://doc.surf)
+::
+::
+
+::section
+## WaveSite
+
+Build websites from SurfDoc files with SurfContext built in.
+
+::product-card[badge="Available" badge-color=green]
+## WaveSite
+
+AI website builder with native .surf format and SurfContext integration
+
+WaveSite builds websites from SurfDoc files. Every WaveSite project uses the .surf format natively, and SurfContext can be used to define project context for AI-assisted site generation and management.
+
+- Builds sites from .surf files with 37 typed block types
+- AI chat generates SurfDoc specs, compiler builds the site
+- Custom domains, SEO, contact forms, visitor chat
+- Free tier + Pro at $12/mo
+
+[Part of the Surfspace platform](https://surf.space)
+::
+::
+
+::section[bg=dark]
+## Surf CLI
+
+Command-line tool for initializing and managing projects.
+
+::product-card[badge="Public release coming soon" badge-color=blue]
+## Surf CLI
+
+Project scaffolding, AI chat, and CloudSurf account access from the terminal
+
+The Surf CLI (`surf`) manages SurfContext projects and connects to CloudSurf services — all from the command line. A public release is coming soon; until then, the manual setup in the [Quick Start](/getting-started) is the recommended path and takes under 5 minutes.
+
+- `init` / `sync` / `validate` — Scaffold, sync, and validate SurfContext projects
+- `login` / `whoami` — Authenticate with your CloudSurf account
+- `chat` / `ask` — Interactive AI chat or one-shot queries
+- `tasks` / `docs` / `status` — Manage workspace tasks and documents
+::
+
+::code[lang=bash file="Usage"]
+# Initialize a new SurfContext project
+surf init
+
+# Sign in to your CloudSurf account
+surf login
+
+# Start an AI chat session
+surf chat
+
+# Ask a one-shot question
+surf ask "How do I add a contact form?"
+
+# Manage tasks
+surf tasks
+surf tasks create "Build landing page"
+surf tasks done 3
+::
+::
+
+::section
+## Surf MCP Server
+
+The integration entry point to Surfspace workspaces — live now.
+
+::product-card[badge="Available" badge-color=green]
+## Surf MCP Server
+
+Connects any MCP-compatible AI agent to ARDS context and Surfspace workspaces
+
+The Surf MCP Server is the integration entry point to Surfspace workspaces, implementing the ARDS v4.0 MCP Integration section: a versioned, append-only tool vocabulary with read / write / build capability tiers, gated tool availability, per-workspace pinned credentials, and OAuth 2.1.
+
+- Read context, docs, guides, plans, and tasks via standardized MCP tools
+- Capability tiers (read / write / build) with gated availability per scope
+- Credentials are pinned to one workspace at mint time — hard isolation by design
+- Works with any MCP-compatible AI agent or IDE
+::
+::
+
+::callout[type=info title="Building a tool?"]
+SurfContext is an open standard. If you are building a developer tool or AI coding agent, you can add SurfContext support by reading `CONTEXT.md` and `surfcontext.json` from the project root. The format is CC-BY-SA 4.0 licensed — free to implement and distribute. The specification source lives at [github.com/cloudsurf-software/surfcontext](https://github.com/cloudsurf-software/surfcontext), and the .surf renderer powering this site is open source at [github.com/cloudsurf-software/surf-parse](https://github.com/cloudsurf-software/surf-parse).
+::

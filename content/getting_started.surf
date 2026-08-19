@@ -1,0 +1,193 @@
+---
+title: Getting Started - SurfContext
+description: Add SurfContext to your project in under 5 minutes. No dependencies, no build step, no lock-in. Five manual steps, then optionally connect the v4 workspace layer.
+---
+
+::style
+accent: #3b82f6
+font: inter
+::
+
+::hero[align=center]
+# Getting Started
+
+Add SurfContext to your project in under 5 minutes. No dependencies, no build step, no lock-in.
+::
+
+::section
+## 1. Create CONTEXT.md
+
+Create a `CONTEXT.md` file in your project root. This is your canonical project context — the single source of truth that all AI agents will read.
+
+::code[lang=markdown file="CONTEXT.md"]
+# My Project
+
+Brief description of what this project does and why it exists.
+
+## Key Files
+
+| Path | Purpose |
+|------|---------|
+| `src/` | Application source code |
+| `tests/` | Test files |
+| `.context/agents/` | Agent definitions |
+| `.context/docs/` | Knowledge documents |
+
+## Architecture
+
+Describe your system architecture at a high level. Include
+frameworks, data flow, and deployment targets.
+
+## Stack & Development
+
+**Stack**: TypeScript, React, Node.js
+**Run locally**: `npm run dev`
+**Run tests**: `npm test`
+**Lint**: `npm run lint`
+
+## Conventions
+
+- List any coding conventions your project follows
+- Include naming patterns, file organization rules, etc.
+::
+::
+
+::section[bg=dark]
+## 2. Create the .context/ directory
+
+Set up the context directory with subdirectories for agents, knowledge docs, and guides.
+
+::code[lang=bash file="Terminal"]
+mkdir -p .context/agents .context/docs .context/guides
+::
+
+Add your first agent definition:
+
+::code[lang=markdown file=".context/agents/code-reviewer.md"]
+---
+name: code-reviewer
+description: Reviews code for quality, security, and best practices
+tools:
+  - Read
+  - Grep
+  - Glob
+---
+
+# Code Reviewer
+
+You review pull requests and code changes for:
+
+- Security vulnerabilities
+- Performance issues
+- Code style consistency
+- Test coverage gaps
+
+## Rules
+
+- Always explain *why* something is a problem, not just *what*
+- Suggest specific fixes, not vague improvements
+- Check for proper error handling in all async operations
+::
+::
+
+::section
+## 3. Add surfcontext.json
+
+Create a `surfcontext.json` manifest to declare your target platforms and generation settings.
+
+::code[lang=json file="surfcontext.json"]
+{
+  "version": "4.0",
+  "source": "manual",
+  "platforms": ["claude", "codex", "cursor"],
+  "canonical": {
+    "rootContext": "CONTEXT.md",
+    "docsDir": ".context/docs",
+    "agentsDir": ".context/agents",
+    "guidesDir": ".context/guides"
+  },
+  "generation": {
+    "claude": {
+      "rootContext": "CLAUDE.md",
+      "method": "sed-copy"
+    },
+    "codex": {
+      "rootContext": "AGENTS.md",
+      "method": "sed-copy"
+    }
+  },
+  "discoveryOrder": [
+    "CONTEXT.md",
+    "surfcontext.json",
+    ".context/docs/",
+    ".context/guides/",
+    ".context/agents/",
+    "plans/"
+  ]
+}
+::
+::
+
+::section[bg=dark]
+## 4. Generate platform files (optional)
+
+Generate platform-specific config files from your canonical context. A simple copy works — the v4.0 spec's Generation & Sync Integrity section defines idempotent injection and round-trip verification for tooling that automates this.
+
+::code[lang=bash file="Terminal"]
+# Copy CONTEXT.md to generate platform files
+cp CONTEXT.md CLAUDE.md
+cp CONTEXT.md AGENTS.md
+
+# A generated-file header is optional but recommended
+::
+
+::callout[type=info title="About the Surf CLI"]
+The Surf CLI (`surf sync`) automates generation and validation. Its public release is coming soon — see the [Tools page](/tools). Until then, the manual copy above is the standard path.
+::
+::
+
+::section
+## 5. Open in your AI tool
+
+Open your project in any supported AI coding agent. It will automatically discover and read your project context. Your final project structure looks like this:
+
+::code[lang=text file="Final Structure"]
+my-project/
+  CONTEXT.md              # Your canonical context (source of truth)
+  surfcontext.json        # Platform targeting + discovery order
+  .context/
+    agents/
+      code-reviewer.md    # Your agent definition
+    docs/                 # Evergreen knowledge docs
+    guides/               # Living how-to documents
+  CLAUDE.md               # Platform-specific (generated)
+  AGENTS.md               # Platform-specific (generated)
+::
+::
+
+::section[bg=dark]
+## Next step: connect a workspace (optional)
+
+ARDS v4.0 adds a workspace layer above the file layer you just created. In a workspace, the documents your team shares and the context your agents see are the same objects, reached through MCP tools with workspace-pinned credentials. The file layer you set up above stays fully valid on its own — it is the export target and offline fallback, so there is never any lock-in.
+
+- Five scopes with hard isolation: personal, workspace-private, workspace, repo, public
+- Tasks with an 8-stage lifecycle and stage-bound artifacts as agent memory
+- Agent launch playbooks with declared tool allow/deny lists
+- Surfspace at surf.space is the reference implementation — see [Tools](/tools)
+::
+
+::section
+## Next steps
+
+- Read the [full specification](/spec) for detailed requirements and examples
+- Add knowledge docs to `.context/docs/` for architecture decisions, API references, and domain knowledge
+- Define more agents in `.context/agents/` for specialized tasks
+- Add living guides to `.context/guides/` for implementation how-tos with gotcha callouts
+- See [what's new in v4.0](/whats-new) — the Workspace Release
+- Check out the [tools page](/tools) for SurfDoc, Surfspace, WaveSite, the Surf CLI, and the Surf MCP Server
+
+::cta[label="Read the Full Spec" href="/spec" primary icon=book]
+::
+::cta[label="What's New in v4.0" href="/whats-new" icon=arrow-right]
+::
+::

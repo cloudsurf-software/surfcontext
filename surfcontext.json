@@ -1,0 +1,44 @@
+{
+  "version": "4.0",
+  "format": ".md",
+  "platforms": ["claude", "codex", "cursor"],
+  "canonical": {
+    "rootContext": "CONTEXT.md",
+    "docsDir": ".context/docs",
+    "agentsDir": ".context/agents",
+    "guidesDir": ".context/guides",
+    "checkpointsDir": "plans/sessions",
+    "plansDir": "plans",
+    "archiveDir": "archive"
+  },
+  "generation": {
+    "claude": {
+      "rootContext": "CLAUDE.md",
+      "method": "sed-copy"
+    },
+    "codex": {
+      "rootContext": "AGENTS.md",
+      "method": "sed-copy"
+    },
+    "cursor": {
+      "rootContext": ".cursorrules",
+      "method": "sed-copy"
+    }
+  },
+  "discoveryOrder": [
+    "CONTEXT.md",
+    "surfcontext.json",
+    "content/",
+    "src/",
+    "static/"
+  ],
+  "ipSafety": {
+    "enabled": true,
+    "owner": "CloudSurf Software LLC",
+    "noAiCoAuthor": true,
+    "noSecrets": true,
+    "noInternalPaths": true,
+    "noDerivativeFraming": true,
+    "noToolMakerCredit": true
+  }
+}

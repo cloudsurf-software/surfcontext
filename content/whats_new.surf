@@ -1,0 +1,127 @@
+---
+title: What's New in ARDS v4.0 - SurfContext
+description: The Workspace Release. ARDS extends from a file standard into a workspace standard — workspace scopes, command center, tasks and stages, agent playbooks, skill runtime, and rewritten MCP integration. Fully backward compatible.
+---
+
+::style
+accent: #3b82f6
+font: inter
+::
+
+::hero[badge="ARDS v4.0 — August 18, 2026" align=center]
+# ARDS v4.0: The Workspace Release
+
+ARDS extends from a file standard into a workspace standard. Knowledge and context unify: the documents a team shares and the context an agent sees are the same objects, living in a cloud workspace the agent reaches through MCP. The file layer is unchanged — every workspace feature is additive and optional.
+
+[Read the Full Spec](/spec){primary}
+[Quick Start](/getting-started)
+::
+
+::stats
+- 2,557 {label="Spec lines" color="#3b82f6"}
+- 36 {label="Sections" color="#a855f7"}
+- 6 {label="New sections in v4" color="#22c55e"}
+- 5 {label="Workspace scopes" color="#f59e0b"}
+- 8 {label="Task stages" color="#ec4899"}
+- 0 {label="Breaking changes" color="#06b6d4"}
+::
+
+::section
+## From file standard to workspace standard
+
+Through v3, context was something a repository presented to an agent. v4.0 adds a workspace layer above the file layer, born from months of daily production use in a multi-repo, multi-agent company. The workspace is where knowledge lives and where agents are launched; the git repository becomes the tooling shell and archive. The cloud is the source of truth, the file layer is the offline fallback, and export is mandatory — no lock-in, ever.
+
+::features[cols=3]
+### Workspace Model & Scopes {icon=globe}
+Five scopes — personal, workspace-private, workspace, repo, public — with hard, credential-enforced isolation between them.
+
+### Workspace as Command Center {icon=settings}
+The workspace is where knowledge lives and agents launch. Cloud source of truth, file-layer offline fallback, mandatory export and anti-lock-in.
+
+### Tasks & Stages {icon=check}
+An 8-stage lifecycle — todo, research, plan, design, breakdown, build, verify, done, plus blocked — with stage-bound artifacts as agent memory.
+
+### Agent Launch & Playbooks {icon=user}
+Declared tool allow/deny lists, stage-authority ceilings, heartbeats, and metering for every agent launch.
+
+### Skill Runtime & Executable Plans {icon=file}
+The dated plan doc is the runtime's input. Journaled, deterministic resume with budget ceilings.
+
+### MCP Integration, rewritten {icon=code}
+Versioned append-only tool vocabulary, capability tiers (read / write / build), gated availability, workspace-pinned credentials, OAuth 2.1.
+
+### Generation & Sync Integrity {icon=search}
+Idempotent injection and round-trip verification for generated platform files.
+
+### Ratified lifecycle features {icon=book}
+Archival lifecycle, root-file inventory, business artifact directories, directory size budgets, and conversation artifacts — drafted in the v3.x cycle, now normative.
+
+### Fully backward compatible {icon=info}
+A valid v3 project is a valid v4 project. The file layer is unchanged; every workspace feature is additive and optional.
+::
+::
+
+::section[bg=dark]
+## Also new since the last announcement
+
+v3.1 and v3.2 shipped between announcements — here is what they added.
+
+### v3.2 — Append-Only Fragment Directories (June 3, 2026)
+
+Concurrency-safe high-churn shared docs. Instead of every session rewriting the same regions of one shared file, each update drops an immutable, uniquely-named fragment into a directory — git auto-merges because no two sessions touch the same file. The committed directory is the source of truth, with a bounded, gitignored rollup view regenerated at the original discovery path.
+
+### v3.1 — SurfDoc & Routing (February 23, 2026)
+
+The `.surf` extension via the `format` field, topic routing in surfcontext.json, the active-work extraction pattern, the direct bridge strategy, platform command stub delegation, SurfDoc YAML frontmatter, and an extended IP safety schema.
+::
+
+::section
+## Version history
+
+::data[format=table sortable]
+Version | Date | Highlights
+v4.0 | 2026-08-18 | The Workspace Release — workspace scopes, command center, tasks & stages, agent playbooks, skill runtime, MCP rewrite, sync integrity
+v3.2 | 2026-06-03 | Append-Only Fragment Directories for concurrency-safe shared docs
+v3.1 | 2026-02-23 | .surf extension, topic routing, active-work extraction, direct bridge, command stubs, extended IP safety
+v3.0 | 2026-02-10 | Guides, checkpoints, evidence epistemology, discovery order, multi-agent coordination, cross-repo refs, IP safety, MCP integration, context budget
+v2.0 | 2026-01-31 | Skills, research docs, scoring, freshness, token budget
+v1.0 | 2026-01-15 | Initial release — CONTEXT.md, agents, docs, plans
+::
+::
+
+::section[bg=dark]
+## Upgrading to v4
+
+All workspace features are opt-in. A valid v3 project is already a valid v4 project — start with a version bump and adopt the workspace layer when you are ready.
+
+::steps
+### Bump version {time="30 sec"}
+Change version in surfcontext.json from "3.0" (or "3.1" / "3.2") to "4.0"
+
+### Adopt fragment directories {time="5 min"}
+Convert high-churn shared docs (active work, plan index) to append-only fragment directories
+
+### Connect a workspace {time="Optional"}
+Move shared knowledge into a workspace and connect agents through MCP with workspace-pinned credentials
+
+### Adopt tasks & stages {time="Optional"}
+Track work through the 8-stage lifecycle with stage-bound artifacts as agent memory
+
+### Define playbooks {time="Optional"}
+Declare tool allow/deny lists and stage-authority ceilings for the agents you launch
+
+### Keep the file layer exported {time="Ongoing"}
+Export workspace knowledge to CONTEXT.md + .context/ so the repo remains a complete offline fallback
+::
+::
+
+::section
+## Ready to upgrade to v4?
+
+All new features are opt-in. Start with a version bump and adopt capabilities as you need them.
+
+::cta[label="Get Started" href="/getting-started" primary icon=arrow-right]
+::
+::cta[label="Full Specification" href="/spec" icon=book]
+::
+::

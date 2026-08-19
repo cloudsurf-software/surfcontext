@@ -1,0 +1,2557 @@
+---
+title: "Agent-Ready Documentation Standard (ARDS)"
+type: specification
+version: 4.0
+created: 2026-01-15
+updated: 2026-08-18
+author: "K. Brady Davis, CloudSurf Software LLC"
+status: active
+license: CC-BY-SA 4.0
+tags: [ards, specification, ai-agents, documentation, workspace]
+---
+
+# Agent-Ready Documentation Standard (ARDS) v4.0
+
+## Abstract
+
+The Agent-Ready Documentation Standard (ARDS) defines a file structure and set of conventions that make software repositories fully navigable by AI coding agents across all major platforms. ARDS provides a canonical source of truth (`.context/`) from which platform-specific files (CLAUDE.md, AGENTS.md, .cursorrules, etc.) are generated — or used directly — solving the fragmentation problem caused by incompatible AI tool formats.
+
+Version 3.0 introduced nine new sections: living guides, session checkpoints, evidence epistemology, formalized discovery order, multi-agent coordination contracts, cross-repository references, IP safety protocols, MCP integration, and context budget management. All v3 additions are backward-compatible — a valid v2 project is a valid v3 project.
+
+Version 3.1 adds six features derived from production use: SurfDoc file extension support (`.surf`), topic routing in surfcontext.json, active work extraction pattern, direct bridge strategy, platform command stub delegation, and extended IP safety schema.
+
+Version 3.2 introduces **Append-Only Fragment Directories** — a concurrency-safe evolution of the high-churn shared documents (Active Work and the Plan Index). Instead of every session rewriting the same regions of one shared file (which collides on merge across machines and agents), each update drops a *new, uniquely-named* fragment into a directory; git auto-merges because no two sessions touch the same file. A single-file *rollup view* is regenerated from the directory at the original discovery path, bounded in size, and gitignored so it can never conflict. v3.2 is backward-compatible — a project may keep monolithic Active Work / Plan Index files and adopt fragment directories incrementally.
+
+Version 4.0 extends ARDS from a **file standard** into a **workspace standard**. In v1–v3, context is something a repository presents to an agent. In v4, knowledge and context unify: the documents a team shares and the context an agent sees are the same objects, living in a cloud **workspace** that the agent reaches through MCP tools. The repository remains the standard's file layer — fully specified, fully valid on its own — while v4 adds the workspace layer above it: a scope model with hard isolation boundaries (Section 30), the workspace-as-command-center pattern (Section 31), first-class tasks with staged lifecycles and artifacts-as-memory (Section 32), agent launch playbooks with scoped tool authority (Section 33), and executable skills driven by plan documents (Section 34). v4.0 also ratifies the lifecycle features drafted during the v3.x cycle — archival lifecycle, root-file inventory, business artifact directories, and directory size budgets (Sections 26–29) — and promotes Conversation Artifacts (Section 12a) and User-Level Context (Section 30) from proposal appendices to normative sections. **A valid v3 project is a valid v4 project**: the file layer is unchanged; every workspace-layer feature is additive and optional.
+
+---
+
+## Table of Contents
+
+1. [Introduction](#1-introduction)
+2. [Design Principles](#2-design-principles)
+3. [File Hierarchy](#3-file-hierarchy)
+4. [Root Context (CONTEXT.md)](#4-root-context)
+5. [Configuration (surfcontext.json)](#5-configuration)
+6. [Agent Configs (.context/agents/)](#6-agent-configs)
+7. [Skill Configs (.context/skills/)](#7-skill-configs)
+8. [Knowledge Docs (.context/docs/)](#8-knowledge-docs)
+9. [Guides (.context/guides/)](#9-guides)
+10. [Plan Docs (plans/)](#10-plan-docs)
+11. [Research Docs (research/)](#11-research-docs)
+12. [Session Checkpoints](#12-session-checkpoints)
+    - [12a. Conversation Artifacts](#12a-conversation-artifacts)
+13. [Discovery Order](#13-discovery-order)
+14. [Evidence Epistemology](#14-evidence-epistemology)
+15. [Multi-Agent Coordination](#15-multi-agent-coordination)
+16. [Cross-Repository References](#16-cross-repository-references)
+17. [IP Safety](#17-ip-safety)
+18. [MCP Integration](#18-mcp-integration)
+19. [Context Budget Management](#19-context-budget-management)
+20. [Token Budget Guidance](#20-token-budget-guidance)
+21. [Platform Compatibility](#21-platform-compatibility)
+22. [ARDS as Superset](#22-ards-as-superset)
+23. [Quality Scoring](#23-quality-scoring)
+24. [Freshness Monitoring](#24-freshness-monitoring)
+25. [Migration Guide](#25-migration-guide)
+26. [Archival Lifecycle](#26-archival-lifecycle)
+27. [Root-File Inventory](#27-root-file-inventory)
+28. [Business Artifact Directories](#28-business-artifact-directories)
+29. [Directory Size Budgets](#29-directory-size-budgets)
+30. [Workspace Model and Scopes](#30-workspace-model-and-scopes)
+31. [Workspace as Command Center](#31-workspace-as-command-center)
+32. [Tasks and Stages](#32-tasks-and-stages)
+33. [Agent Launch and Playbooks](#33-agent-launch-and-playbooks)
+34. [Skill Runtime and Executable Plans](#34-skill-runtime-and-executable-plans)
+35. [Generation and Sync Integrity](#35-generation-and-sync-integrity)
+36. [Appendix A: Anti-Patterns](#appendix-a-anti-patterns)
+37. [Appendix B: Changelog](#appendix-b-changelog)
+38. [Appendix C: Conversation Artifacts (Ratified — see 12a)](#appendix-c-conversation-artifacts)
+39. [Appendix D: User-Level Context (Ratified — see 30)](#appendix-d-user-level-context)
+
+---
+
+## 1. Introduction
+
+The proliferation of AI coding agents has created a fragmentation problem. Each tool defines its own project context format:
+
+| Tool | Context File | Agent/Skill Format | Scope |
+|------|-------------|-------------------|-------|
+| Claude Code | `CLAUDE.md` | `.claude/agents/*.md` | Root context + agents |
+| Codex CLI | `AGENTS.md` | Agent Skills (`SKILL.md`) | Root context + skills |
+| Cursor | `.cursor/rules/*.mdc` | Glob-scoped rules | File-pattern rules |
+| GitHub Copilot | `.github/copilot-instructions.md` | `.github/instructions/*.instructions.md` | Workspace + path-specific |
+| Windsurf | `.windsurfrules` | N/A | Root context only |
+| llms.txt | `llms.txt` | N/A | LLM-readable site summary |
+
+A project supporting multiple tools must maintain parallel files with overlapping content. Updates to one must be manually propagated to others. Facts diverge. Context rots.
+
+ARDS solves this with a **write-once, generate-many** architecture. Project documentation is authored in a canonical location (`.context/`) and automatically mapped to each platform's expected format. The standard defines not just file locations but the full documentation architecture: what types of documents exist, how they relate, how agents discover them, and how they stay fresh.
+
+### What ARDS Is
+
+- A file structure specification for AI-navigable repositories
+- A set of document type definitions (root context, agents, skills, docs, guides, plans, research)
+- A discovery protocol that agents follow to build context
+- A generation pipeline from canonical source to platform-specific output
+
+### What ARDS Is Not
+
+- Not a replacement for any single platform's format — it generates them
+- Not a runtime protocol (that's MCP)
+- Not a build system or package manager
+- Not required to use any specific AI tool
+
+---
+
+## 2. Design Principles
+
+1. **Token budget awareness.** Root context is loaded every agent turn. Everything else loads on demand. Structure files to minimize per-turn cost while maximizing agent effectiveness.
+
+2. **Tables over prose.** AI agents parse structured data faster and more reliably than paragraphs. Use tables for any data with 2+ attributes.
+
+3. **Explicit paths over descriptions.** Write `src/lib/auth.ts`, not "the auth file." Agents cannot infer locations from vague descriptions.
+
+4. **Single source of truth.** Each fact lives in one file. Other files reference it, never duplicate it. This is the core principle that prevents context rot.
+
+5. **Temporal separation.** Evergreen reference (`.context/docs/`) and time-stamped work (`plans/`) serve different purposes. Never mix them in the same directory.
+
+6. **Self-containment per type.** Each document should be useful when read in isolation.
+
+7. **Progressive disclosure.** Summaries load first; details load on demand. Match depth to access pattern.
+
+8. **Canonical source, generated output.** Edit `.context/`. Never edit `.claude/` or `.cursor/` directly. Generated files are disposable.
+
+9. **Backward compatibility.** New spec versions must not break existing conforming projects. All additions are optional unless the version field is explicitly bumped.
+
+10. **Finite working tree.** *(New in v4.0.)* The working tree is a scarce resource. Every artifact has an end state: archived, deleted, or promoted. Unowned cruft is a bug, not a neutral state.
+
+11. **Knowledge and context are one.** *(New in v4.0.)* The documents a team shares and the context an agent sees should be the same objects, not parallel copies. When a workspace layer exists (Sections 30–31), it is the source of truth and the file layer is a cache or archive — never a competing edit surface.
+
+---
+
+## 3. File Hierarchy
+
+### Required Structure
+
+```
+project-root/
+  CONTEXT.md                          # Root context (required)
+  surfcontext.json                    # Configuration (recommended)
+  .context/
+    agents/                           # Agent definitions (1 file per agent)
+      agent-name.md
+    docs/                             # Evergreen knowledge docs
+      architecture.md
+      conventions.md
+```
+
+### Full Structure (All Optional Additions)
+
+```
+project-root/
+  CONTEXT.md                          # Root context (canonical)
+  surfcontext.json                    # ARDS configuration
+  CLAUDE.md                           # Generated for Claude Code
+  AGENTS.md                           # Generated for Codex CLI
+  .context/
+    agents/                           # Agent definitions
+      agent-name.md
+    skills/                           # Reusable expertise (directory per skill)
+      skill-name/
+        SKILL.md
+        template.md                   # Supporting files
+    docs/                             # Evergreen knowledge docs
+      architecture.md
+      conventions.md
+    guides/                           # Living how-to documents
+      deploying-to-aws.md
+      debugging-amplify.md
+    queue.md                          # Multi-agent task queue
+  .claude/                            # Generated/symlinked for Claude Code
+    agents/ -> ../.context/agents/
+    docs/ -> ../.context/docs/
+    skills/ -> ../.context/skills/
+    settings.local.json
+  plans/                              # Time-stamped deliverables
+    [category]/
+      YYYY-MM-DD-topic.md
+    sessions/                         # Session checkpoints
+      YYYY-MM-DD-checkpoint.md
+  research/                           # Academic manuscripts
+    [project-name]/
+      manuscript/v[N]/
+      analysis/
+  assets/                             # Static media used by docs (new in v4.0)
+  archive/                            # Gitignored archive bucket (new in v4.0, Section 26)
+  scripts/
+    surfcontext-sync.sh               # Platform generation script
+```
+
+### Naming Conventions
+
+| Element | Convention | Examples |
+|---------|-----------|----------|
+| Agent files | `kebab-case.md` | `fact-checker.md`, `frontend-dev.md` |
+| Skill directories | `kebab-case/` | `code-review/`, `patent-draft/` |
+| Knowledge docs | `kebab-case.md` | `architecture.md`, `company-overview.md` |
+| Guide files | `kebab-case.md` | `deploying-to-aws.md`, `native-gtk-app.md` |
+| Plan docs | `YYYY-MM-DD-topic-slug.md` | `2026-01-30-funding-strategy.md` |
+| Persistent files | `kebab-case.md` (no date) | `bias-ledger.md`, `README.md` |
+| Plan categories | `kebab-case/` | `capital/`, `product/`, `strategy/` |
+| Research projects | `kebab-case/` | `remote-flow/`, `hybrid-teams/` |
+| Checkpoint files | `YYYY-MM-DD-topic-checkpoint.md` | `2026-02-10-sprint-review-checkpoint.md` |
+
+### Depth Rules
+
+**Default: maximum 2 levels** of nesting inside `.context/` and `plans/`.
+
+| Directory | Allowed Depth | Reason |
+|-----------|--------------|--------|
+| `.context/docs/` | 1 level | Flat knowledge docs |
+| `.context/guides/` | 1 level | Flat guide files |
+| `.context/skills/[name]/` | 2 levels | Skill directories contain supporting files |
+| `plans/[category]/` | 2 levels | Category + dated files |
+| `plans/patents/[family]/` | 3 levels | Per-family structure |
+| `research/[project]/manuscript/v[N]/` | 3 levels | Versioned manuscripts |
+| `plans/develop/YYYY-MM-DD-slug/` | 3 levels | Multi-file dev plans (new in v4.0, Section 10) |
+| `plans/develop/[year]/[slug]/` | 4 levels | Year-bucket rotation (new in v4.0, Section 29) |
+| `archive/[sweep]/[bucket]/` | 3 levels | Sweep dir + bucket + content (new in v4.0, Section 26) |
+| `assets/[topic]/` | 2 levels | Topical grouping for media (new in v4.0) |
+
+### SurfDoc File Extension
+
+**New in v3.1.** ARDS files default to `.md` (Markdown). Projects using SurfDoc format may use the `.surf` extension instead, configured via the `format` field in `surfcontext.json`:
+
+```json
+{
+  "format": ".surf"
+}
+```
+
+When `format` is set to `".surf"`, all ARDS-managed files use the `.surf` extension:
+
+| File Type | Default (`.md`) | SurfDoc (`.surf`) |
+|-----------|----------------|-------------------|
+| Root context | `CONTEXT.md` | `CONTEXT.surf` |
+| Agent configs | `.context/agents/agent-name.md` | `.context/agents/agent-name.surf` |
+| Knowledge docs | `.context/docs/architecture.md` | `.context/docs/architecture.surf` |
+| Guides | `.context/guides/deploying.md` | `.context/guides/deploying.surf` |
+| Skill definitions | `.context/skills/name/SKILL.md` | `.context/skills/name/SKILL.surf` |
+| Plans | `plans/category/YYYY-MM-DD-topic.md` | `plans/category/YYYY-MM-DD-topic.surf` |
+| Task queue | `.context/queue.md` | `.context/queue.surf` |
+
+**Exceptions** — these files always use `.md` regardless of `format`:
+
+| File | Reason |
+|------|--------|
+| `README.md` | GitHub convention — renders on repository pages |
+| Platform memory files | Claude Code expects `MEMORY.md` |
+| `.claude/commands/*.md` | Claude Code command stubs (see Section 7) |
+
+The `format` field is optional. When absent, `.md` is assumed. Tooling should read the `format` field before generating file paths.
+
+SurfDoc files use YAML frontmatter for metadata instead of blockquote headers. See Sections 10 and 12 for examples of both formats.
+
+---
+
+## 4. Root Context
+
+CONTEXT.md is the single most important file in any ARDS-compliant repository. It is auto-loaded by Claude Code every turn (as CLAUDE.md), read first by Codex (as AGENTS.md), and serves as the primary orientation for any AI agent or human contributor.
+
+### Token Budget
+
+| Repo Type | Target Lines | Tokens/Turn | 30-Turn Cost |
+|-----------|-------------|-------------|-------------|
+| Product repo | < 200 | ~800 | ~24,000 |
+| Command center | < 300 | ~1,200 | ~36,000 |
+
+### Required Sections (In Order)
+
+```markdown
+# [Project Name]
+
+[2-3 sentence identity: what this is, what stack, what it does.]
+
+## Key Files
+
+| Path | Purpose |
+|------|---------|
+| ... | ... |
+
+## Architecture
+
+[Data flow, key patterns, component relationships. NOT implementation details.]
+
+## Stack & Development
+
+[Technologies, versions, how to run/build/test/deploy.]
+
+## Active Work
+
+[Current state: what's deployed, in progress, blocked, planned.]
+
+## Cross-Repo Dependencies
+
+[Sibling repos with explicit relative paths.]
+
+## Agents
+
+| Agent | Scope |
+|-------|-------|
+| ... | ... |
+```
+
+Strategy/command center repos may include additional sections:
+
+- **Expertise** — domains the root agent covers
+- **Principles** — decision-making rules shaping agent behavior
+- **Commands** — slash commands or trigger phrases
+
+### What Does NOT Belong in CONTEXT.md
+
+| Content | Belongs In | Reason |
+|---------|-----------|--------|
+| Full API documentation | `.context/docs/api.md` | Too large for per-turn loading |
+| Historical decisions | `.context/docs/decisions.md` | Evergreen reference, not active state |
+| Detailed coding conventions | `.context/docs/conventions.md` | On-demand, not every turn |
+| Company-wide context | Reference strategy repo | Single source of truth |
+| More than 5-6 plan references | Agents can glob `plans/` | Token savings |
+| Implementation guides | `.context/guides/` | On-demand, living documents |
+
+### Active Work Extraction
+
+**New in v3.1.** When the Active Work section exceeds ~20 lines, extract detailed project status into `.context/docs/active-work.md` and replace it with a summary table and pointer:
+
+```markdown
+## Active Work
+
+Detailed status: `.context/docs/active-work.md`
+
+| Product | Status | Next |
+|---------|--------|------|
+| Product A | PRODUCTION — 640 tests | Client migrations |
+| Product B | v0.6.0, 414 tests | Production deploy |
+| Product C | In development | Merge to staging |
+```
+
+The detail file contains full per-project status, gotchas, recent changes, and next steps — content that is valuable when working on a specific product but wasteful to load every turn.
+
+**Measured result:** In a command center repo with 7 active products, this pattern reduced CONTEXT.md from ~300 lines (~15KB, ~6,000 tokens) to ~185 lines (~8KB, ~3,200 tokens) — a 47% reduction in per-turn token cost. Over a 30-turn conversation, this saves ~84,000 tokens.
+
+Agents needing project detail load `active-work.md` on demand. Agents doing unrelated work (legal analysis, patent drafting, brand review) never load it.
+
+### Append-Only Fragment Directories
+
+**New in v3.2.** The single biggest source of merge conflicts in a multi-machine, multi-agent ARDS project is the set of *high-churn shared documents* — chiefly **Active Work** and the **Plan Index**. Every session rewrites the same regions (the `Last updated:` header, the prepended entry at the top of a section), so two branches editing the same file collide on merge:
+
+```
+$ git merge brady/mini3
+CONFLICT (content): Merge conflict in .context/docs/plan-index.surf
+```
+
+The fix is to stop editing a shared file and instead **append a new file per update**. A high-churn document becomes a *directory of fragments*:
+
+```
+.context/docs/
+  active-work/                              <- fragment directory (source of truth, committed)
+    active-work-legacy-ards-v3.surf          <- frozen baseline (the former monolith, intact)
+    2026-06-03-1145-laptop-api-cutover.surf  <- one fragment per update
+    2026-06-03-0900-desktop-web-deploy.surf
+  active-work.surf                          <- ROLLUP: generated, gitignored, bounded
+```
+
+**Rules:**
+
+1. **Fragments are immutable and uniquely named.** Convention: `YYYY-MM-DD-HHMM-<machine>-<slug>.surf`. The machine token (e.g. `laptop`, `desktop`, `ci`) guarantees uniqueness even when two machines update in the same minute, so two fragments never collide. A fragment, once written, is not edited — superseding state is expressed by writing a *newer* fragment, not by mutating an old one.
+2. **The directory is the source of truth, and it is committed.** Git auto-merges a directory of distinct filenames with zero conflicts.
+3. **The monolith is preserved, never deleted.** When migrating an existing project, move the current shared file into the directory renamed `<stream>-legacy-ards-v3.surf` (or any non-dated name). It becomes the frozen historical baseline — no content is lost and no transcription risk is taken.
+4. **A bounded rollup is regenerated at the original discovery path.** A generator concatenates fragments **newest-first** (dated fragments by descending name; non-dated baseline last), strips per-fragment frontmatter, and writes a single-file view to the path the monolith used to occupy (`active-work.surf`, `plan-index.surf`). This preserves single-file ergonomics for humans and any tool that expects the file, and keeps `discoveryOrder` references valid.
+5. **The rollup is bounded and gitignored.** It is capped under a line budget (default ~380, keeping the file < 400 lines) so per-turn token cost stays predictable; when the budget is hit the rollup emits a truncation pointer to the directory. Because it is a *generated artifact*, it is gitignored — which means **it can never merge-conflict again**, closing the loop. A fresh clone has no rollup until the generator runs; the directory remains canonical.
+6. **The rollup is regenerated periodically — at every checkpoint and at session start.** The checkpoint workflow (Section 12) regenerates after writing a fragment; a platform `SessionStart` hook regenerates on session open so a machine that just pulled another machine's fragments always reads a current view. Both call the same generator (`scripts/build-context-rollup.py` in the reference implementation).
+
+This pattern generalizes to any append-only context stream (decision logs, incident notes, changelog feeds). Use it when (a) the document is updated nearly every session, (b) updates are additive rather than rewrites of prior content, and (c) the project is edited from more than one branch/machine/agent. Keep a plain shared file when the document is low-churn or genuinely needs in-place edits to existing content.
+
+**Configuration.** Declare fragment streams in `surfcontext.json` so agents know which paths are directories-of-fragments versus plain files (see Section 5, `fragmentStreams`).
+
+---
+
+## 5. Configuration
+
+The `surfcontext.json` file at the repository root declares how the project is structured and which platforms to generate for.
+
+### Schema (v4.0)
+
+```json
+{
+  "version": "4.0",
+  "format": ".md",
+  "platforms": ["claude", "codex"],
+  "canonical": {
+    "rootContext": "CONTEXT.md",
+    "agentsDir": ".context/agents",
+    "docsDir": ".context/docs",
+    "skillsDir": ".context/skills",
+    "guidesDir": ".context/guides",
+    "checkpointsDir": "plans/sessions",
+    "conversationsDir": ".context/conversations",
+    "plansDir": "plans",
+    "archiveDir": "archive"
+  },
+  "generation": {
+    "claude": {
+      "rootContext": "CLAUDE.md",
+      "agentsDir": ".claude/agents",
+      "docsDir": ".claude/docs",
+      "method": "symlink",
+      "rootContextMethod": "sed-copy"
+    },
+    "codex": {
+      "rootContext": "AGENTS.md",
+      "method": "template-copy"
+    }
+  },
+  "discoveryOrder": [
+    "CONTEXT.md",
+    "surfcontext.json",
+    ".context/docs/",
+    ".context/guides/",
+    ".context/agents/",
+    ".context/skills/",
+    ".context/queue.md",
+    "plans/"
+  ],
+  "topics": {
+    "legal": [".context/docs/legal-plan.md", "plans/legal/", ".context/agents/legal-structure.md"],
+    "infra": [".context/docs/repo-registry.md", ".context/agents/devops-architect.md"],
+    "research": ["research/", ".context/agents/researcher.md"]
+  },
+  "fragmentStreams": {
+    "active-work": {
+      "dir": ".context/docs/active-work",
+      "rollup": ".context/docs/active-work.md",
+      "maxRollupLines": 380
+    },
+    "plan-index": {
+      "dir": ".context/docs/plan-index",
+      "rollup": ".context/docs/plan-index.md",
+      "maxRollupLines": 380
+    }
+  },
+  "businessDirs": {
+    "brand": { "purpose": "Brand assets", "retention": "evergreen", "public": false },
+    "legal": { "purpose": "Corporate docs, contracts", "retention": "evergreen", "public": false }
+  },
+  "sizeBudgets": {
+    "plans/develop": { "max": 100, "action": "year-bucket" },
+    "plans/sessions": { "max": 200, "action": "archive-by-year" },
+    ".context/docs": { "max": 30, "action": "audit-and-archive" }
+  },
+  "archive": {
+    "gitignore": true,
+    "manifestRequired": true,
+    "defaultThresholds": {
+      "completedPlanDays": 90,
+      "supersededPlanDays": 0,
+      "deferredDocDays": 90,
+      "sessionCheckpointDays": 120
+    }
+  },
+  "ipSafety": {
+    "enabled": true,
+    "owner": "Example Corp",
+    "prohibitedAttributions": [],
+    "noAiCoAuthor": true,
+    "noSecrets": true,
+    "noInternalPaths": true,
+    "noDerivativeFraming": true,
+    "noToolMakerCredit": true,
+    "registryPath": ".context/docs/ip-ownership-registry.md"
+  },
+  "workspace": {
+    "provider": "https://example-workspace-host",
+    "workspaceSlug": "example",
+    "commandCenter": true,
+    "dispositions": {
+      "docs": "workspace",
+      "guides": "workspace",
+      "activePlans": "workspace",
+      "queue": "workspace-tasks",
+      "skills": "repo",
+      "agents": "repo",
+      "research": "repo",
+      "historicalPlans": "repo-archive"
+    }
+  }
+}
+```
+
+The `workspace` block (new in v4.0) declares that this project participates in a workspace layer (Sections 30–31): which workspace is authoritative, whether this repo is a command center being served from the workspace, and the per-artifact disposition map — which artifact classes live in the workspace versus stay in the repo. The `mcp` block from v3 is superseded by Section 18's connection contract; projects may keep it for backward compatibility.
+
+### Field Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `version` | Yes | ARDS version: `"4.0"` |
+| `format` | No | File extension: `".md"` (default) or `".surf"` (new in v3.1) |
+| `platforms` | Yes | Target platforms: `"claude"`, `"codex"`, `"cursor"`, `"copilot"` |
+| `canonical` | Yes | Source-of-truth file locations |
+| `canonical.rootContext` | Yes | Path to canonical root context file |
+| `canonical.agentsDir` | Yes | Path to agent definitions directory |
+| `canonical.docsDir` | Yes | Path to knowledge docs directory |
+| `canonical.skillsDir` | No | Path to skills directory |
+| `canonical.guidesDir` | No | Path to guides directory (new in v3) |
+| `canonical.checkpointsDir` | No | Path to session checkpoints (new in v3) |
+| `canonical.plansDir` | No | Path to plans directory (new in v3) |
+| `generation` | No | Platform-specific generation configuration |
+| `discoveryOrder` | No | Ordered list of paths agents should navigate (new in v3) |
+| `topics` | No | Keyword-to-path index for agent navigation (new in v3.1) |
+| `fragmentStreams` | No | Append-only fragment directories + their generated rollups (new in v3.2). Each entry: `dir` (fragment source-of-truth directory), `rollup` (generated, gitignored single-file view), `maxRollupLines` (rollup line budget). |
+| `canonical.conversationsDir` | No | Path to conversation artifacts (ratified in v4.0, Section 12a) |
+| `canonical.archiveDir` | No | Path to archive root. Default: `archive` (new in v4.0, Section 26) |
+| `businessDirs` | No | Registry of non-ARDS top-level directories with retention + public flags (new in v4.0, Section 28) |
+| `sizeBudgets` | No | Per-directory size ceilings (new in v4.0, Section 29) |
+| `archive` | No | Archive behavior: `gitignore`, `manifestRequired`, `defaultThresholds` (new in v4.0, Section 26) |
+| `ipSafety` | No | IP safety configuration (new in v3) |
+| `mcp` | No | MCP server integration configuration (new in v3; superseded by Section 18 in v4.0, kept for compatibility) |
+| `workspace` | No | Workspace-layer declaration: provider, slug, command-center flag, disposition map (new in v4.0, Sections 30–31) |
+
+### Bridge Strategies
+
+| Strategy | When to Use | Pros | Cons |
+|----------|-------------|------|------|
+| **Direct** | Canonical file IS the platform file | No generation, no sync, simplest | Requires platform to accept canonical filename |
+| **Symlinks** | Linux/macOS, agents and docs | Zero sync overhead, instant propagation | Requires symlink support |
+| **Sed copy** | Root context needing path transforms | Simple, deterministic | Re-run on edits |
+| **Template copy** | AGENTS.md needing content transforms | Full control over output | Re-run on edits |
+
+**New in v3.1: Direct strategy.** When a platform can read the canonical file directly — for example, Claude Code configured to read `CONTEXT.surf` as its root context, or Codex reading `CONTEXT.surf` as `AGENTS.md` — no generation step is needed. This is the preferred strategy for single-platform projects or projects where all target platforms accept the same file. Set `"method": "direct"` in the generation block:
+
+```json
+{
+  "generation": {
+    "claude": {
+      "rootContext": "CONTEXT.surf",
+      "method": "direct"
+    }
+  }
+}
+```
+
+### Topic Routing
+
+**New in v3.1.** The `topics` field provides a lightweight keyword-to-path index that helps agents find relevant files without scanning the full directory tree. Each key is a topic string; each value is an array of file or directory paths:
+
+```json
+{
+  "topics": {
+    "legal": [".context/docs/legal-plan.md", "plans/legal/", ".context/agents/legal-structure.md"],
+    "infra": [".context/docs/repo-registry.md", ".context/agents/devops-architect.md"],
+    "research": ["research/", ".context/agents/researcher.md"]
+  }
+}
+```
+
+Agents receiving a task related to "legal" can load just the files listed under that topic instead of reading every doc in `.context/docs/`. This is especially valuable in command center repos with 30+ docs and 20+ agents.
+
+**Rules:**
+1. Topics are hints, not restrictions. Agents may still discover relevant files through other means.
+2. Paths can point to files or directories. Directory paths (trailing `/`) mean "glob this directory."
+3. Keep topics to 5-10. If you need more, the project may need better directory organization instead.
+
+---
+
+## 6. Agent Configs
+
+Agent configs in `.context/agents/*.md` define specialist personas that AI tools dispatch based on user intent. Each file creates a focused agent with its own expertise, tool access, and output patterns.
+
+### File Format
+
+```yaml
+---
+name: kebab-case-name
+description: Action-oriented, 80-150 chars. Starts with verb. This is the dispatch key.
+tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch
+model: haiku | sonnet | opus | inherit
+---
+```
+
+| Field | Required | Rules |
+|-------|----------|-------|
+| `name` | Yes | Kebab-case. Must match filename without `.md`. |
+| `description` | Yes | 80-150 chars. Specific, action-oriented. |
+| `tools` | Yes | Comma-separated. Only tools the agent needs. |
+| `model` | Yes | Match model to task complexity. |
+
+### Model Selection
+
+| Model | Use When |
+|-------|----------|
+| `haiku` | Simple lookups, status checks, formatting |
+| `sonnet` | Most development work, analysis, writing |
+| `opus` | Complex multi-step strategy, nuanced judgment |
+| `inherit` | Defer to parent context |
+
+### Body Structure
+
+```markdown
+# [Agent Title]
+
+[One paragraph: who you are, what you do. Second person.]
+
+## Scope
+
+- Bullet list of responsibilities
+
+## Context Files
+
+Read before starting work:
+- `.context/docs/architecture.md` — system structure
+- `.context/guides/deploying.md` — deployment guide
+
+## How to Work
+
+[Numbered steps for sequential processes.]
+
+## Output Format
+
+[What the agent produces and where it writes.]
+
+## Cross-Agent Coordination
+
+| Direction | Agent | What Flows |
+|-----------|-------|-----------|
+| Receives from | competitive-intel | Battle cards |
+| Sends to | sales-outreach | Positioning |
+
+## Principles
+
+[3-5 decision-making rules.]
+```
+
+### Scoping Rules
+
+| Rule | Detail |
+|------|--------|
+| One job per agent | Don't combine frontend + deployment + testing |
+| 3-5 per product repo | Enough coverage without overlap |
+| Up to 25 for command centers | Strategy repos coordinate many domains |
+| No cross-cutting duplication | Product repos don't need legal/capital agents |
+| Stack-appropriate tools | Don't give every agent every tool |
+
+---
+
+## 7. Skill Configs
+
+Skills define reusable expertise with progressive disclosure. Unlike agents, skills support slash-command invocation, supporting files, and cross-platform portability via the Agent Skills standard.
+
+### Directory Structure
+
+```
+.context/skills/
+  patent-draft/
+    SKILL.md                    # Skill definition
+    claim-template.md           # Supporting file
+  code-review/
+    SKILL.md
+```
+
+### SKILL.md Format
+
+```yaml
+---
+name: patent-draft
+description: Draft patent applications following USPTO conventions.
+allowed-tools: Read, Write, Edit, Glob, Grep
+model: opus
+---
+
+# Patent Drafting Skill
+
+[Skill content — expertise, procedures, templates]
+```
+
+### When to Use Skills vs Agents
+
+| Property | Agents | Skills |
+|----------|--------|--------|
+| Primary purpose | Independent parallel workers | Reusable expertise |
+| Execution model | Forked subagent (isolated context) | Inline or forked |
+| Best for | Long analysis, strategy | Code patterns, templates |
+| Cross-platform | Claude Code only | Claude Code + Codex |
+| Invocation | Description match | Description match or `/command` |
+| Supporting files | Not supported | Supported (templates, examples) |
+
+### Platform Command Registration
+
+**New in v3.1.** Claude Code discovers slash commands from `.claude/commands/*.md`. To make ARDS skills available as `/slash-commands` while keeping `.context/skills/` as the source of truth, use the **stub delegation pattern**:
+
+```
+.claude/commands/
+  deploy-fly.md          # Stub — delegates to skill
+  code-audit.md          # Stub — delegates to skill
+  checkpoint.md          # Stub — delegates to skill
+```
+
+Each stub is a thin file that reads and executes the corresponding skill:
+
+```markdown
+Read and execute the skill defined at .context/skills/deploy-fly/SKILL.md
+```
+
+This pattern:
+1. **Keeps `.context/skills/` canonical.** Edit skills in one place, commands update automatically.
+2. **Respects platform conventions.** Claude Code expects `.claude/commands/*.md`; stubs satisfy this.
+3. **Stubs always use `.md`.** Claude Code requires the `.md` extension for commands regardless of the project's `format` setting.
+
+Projects with many skills (20+) benefit from scripted stub generation. A simple loop creates one stub per skill directory:
+
+```bash
+for skill in .context/skills/*/SKILL.*; do
+  name=$(basename $(dirname "$skill"))
+  echo "Read and execute the skill defined at $skill" > ".claude/commands/$name.md"
+done
+```
+
+---
+
+## 8. Knowledge Docs
+
+Knowledge docs in `.context/docs/*.md` store evergreen reference material too detailed for CONTEXT.md but essential for agent work. Read on demand, not every turn.
+
+### File Format
+
+```markdown
+# [Document Title]
+
+> Last updated: YYYY-MM-DD
+
+[Content organized with headers, tables, and code blocks.]
+```
+
+**The `> Last updated:` date is required.** Agents use this to assess freshness. A knowledge doc without a date is untrustworthy.
+
+### Standard Docs
+
+**All repos:**
+
+| File | Purpose |
+|------|---------|
+| `architecture.md` | System structure, data flow, component relationships |
+| `conventions.md` | Coding patterns, naming rules, file organization |
+
+**Strategy repos add:**
+
+| File | Purpose |
+|------|---------|
+| `company-overview.md` | Entity, team, positioning |
+| `product-portfolio.md` | Products, stages, stacks |
+| `repo-registry.md` | All repos with paths and status |
+
+### When to Create
+
+- Content exceeds 20 lines and would bloat CONTEXT.md
+- Content is evergreen (not time-stamped analysis)
+- Multiple agents need the same information
+
+### When NOT to Create
+
+- Content is time-stamped analysis → use `plans/`
+- Content is specific to one agent → put in agent body
+- Content is a one-liner → put in CONTEXT.md
+
+---
+
+## 9. Guides
+
+**New in v3.0.** Guides are living how-to documents in `.context/guides/` that accumulate battle-tested implementation knowledge over time. They are distinct from every other document type:
+
+| Type | Purpose | Mutability |
+|------|---------|-----------|
+| **Docs** (`.context/docs/`) | Describe what IS — state, architecture, schemas | Updated when state changes |
+| **Agents** (`.context/agents/`) | Define WHO — personas with expertise | Stable |
+| **Skills** (`.context/skills/`) | Define COMMANDS — imperative actions | Stable |
+| **Guides** (`.context/guides/`) | Describe HOW TO — procedures with accumulated experience | **Living — grows with each implementation** |
+
+### File Format
+
+```markdown
+# Guide: [Topic Name]
+
+> Platform: [scope, e.g., "AWS Amplify", "GTK4 + Rust", "all"]
+> Last updated: YYYY-MM-DD
+> Confidence: low | medium | high
+
+## Table of Contents
+
+- [Section 1](#section-1)
+- [Section 2](#section-2)
+
+## Section 1
+
+Content with code examples and patterns.
+
+> **Gotcha** (learned YYYY-MM-DD): Description of a non-obvious problem
+> discovered during implementation and how to fix it.
+
+## Section 2
+
+More content. As more implementations are done, more gotchas and
+patterns accumulate here.
+```
+
+### Key Properties
+
+| Property | Rule |
+|----------|------|
+| Table of contents | Required — guides are long-form; agents need navigation |
+| Last updated | Required — signals freshness |
+| Confidence level | Required — `low` (from docs, untested), `medium` (partially validated), `high` (battle-tested) |
+| Gotcha callouts | Use blockquote with `**Gotcha**` prefix and date |
+| Living by design | Agents SHOULD update the relevant guide after completing work in its domain |
+
+### Agent Behavior with Guides
+
+1. **Before implementing**: Check `.context/guides/` for a guide matching the domain. If one exists, read it.
+2. **After implementing**: If you learned something non-obvious, update the relevant guide. If no guide exists, consider creating one.
+3. **Confidence updates**: If you validated a guide's advice, bump confidence. If advice was wrong, correct it and note the correction.
+
+### Discovery Order
+
+Guides are consulted **before** agents because an agent working in a domain should load the relevant guide into context before starting work:
+
+```
+CONTEXT.md → surfcontext.json → docs/ → guides/ → agents/ → skills/ → queue → plans/
+```
+
+---
+
+## 10. Plan Docs
+
+Plan docs in `plans/` capture point-in-time analysis, decisions, strategies, and deliverables.
+
+### File Naming
+
+```
+plans/[category]/YYYY-MM-DD-descriptive-slug.md
+```
+
+### Header Format
+
+```markdown
+# [Plan Title]
+
+> Date: YYYY-MM-DD
+> Author: [Author name]
+> Status: Draft | Active | Complete | Superseded
+```
+
+**SurfDoc alternative (v3.1).** Projects using `.surf` extension may use YAML frontmatter instead:
+
+```yaml
+---
+title: "[Plan Title]"
+type: plan
+version: 1
+created: YYYY-MM-DD
+author: "[Author name]"
+status: draft | active | complete | superseded
+tags: [category, topic]
+---
+```
+
+Both formats are valid. Within a project, use one consistently.
+
+### Category Taxonomy
+
+| Category | Contents |
+|----------|----------|
+| `capital/` | Funding, cap table, investor strategy |
+| `product/` | Product strategy, design specs, roadmaps |
+| `strategy/` | Business strategy, thesis evaluations |
+| `competitive/` | Competitor landscape, market sizing |
+| `ideas/` | Idea captures, brainstorms |
+| `sales/` | Sales playbooks, outreach, pipeline |
+| `marketing/` | Content, SEO, social campaigns |
+| `launches/` | Launch checklists, beta programs |
+| `workspace/` | Repo audits, agent ecosystem plans |
+| `dev/` | Workflow audits, CI/CD, testing |
+| `fact-check/` | Fact-check reports, bias ledger |
+| `patents/` | Patent families, prior art, filing strategy |
+| `infrastructure/` | Infra plans, migrations, deployment |
+| `legal/` | Corporate structure, compliance |
+| `sessions/` | Session checkpoints (see Section 12) |
+| `research/` | Study designs, venue analysis |
+| `risk/` | Risk registers, scenario plans |
+| `revenue/` | Revenue analysis, pricing studies |
+
+### Persistent File Exception
+
+Some files are updated in place rather than created as snapshots:
+
+| Pattern | Examples | Reason |
+|---------|---------|--------|
+| Running records | `bias-ledger.md` | Accumulates entries over time |
+| Directory indexes | `README.md` | Describes the directory |
+| Reference docs | `PATENT-STANDARDS.md` | Convention reference |
+
+Rule: persistent files are the exception. Default to `YYYY-MM-DD-slug.md`.
+
+### Canonical Category Names
+
+**New in v4.0.** Singular/plural is locked for common categories to prevent parallel directories from accumulating:
+
+| Canonical | Deprecated aliases |
+|-----------|-------------------|
+| `plans/client/` | ~~`plans/clients/`~~ |
+| `plans/develop/` | ~~`plans/dev/`~~ |
+| `plans/infra/` | ~~`plans/infrastructure/`~~ |
+| `plans/competitive/` | ~~`plans/compete/`~~ |
+| `plans/research/` | ~~`plans/papers/`~~ |
+
+Projects with deprecated directories should run one migration sweep: archive the deprecated copy and merge any unique content into the canonical directory.
+
+### Multi-File Plan Directories
+
+**New in v4.0 (retroactively documented from production use).** Multi-step development tasks need supporting files — specs, handoffs, progress logs. `plans/develop/` is granted a 3-level exception:
+
+```
+plans/develop/
+  YYYY-MM-DD-slug/
+    01-research-brief.md
+    02-product-brief.md
+    03-architecture-brief.md
+    PROGRESS.md
+```
+
+When executable skills are in use (Section 34), the dated plan file or directory is the skill's input.
+
+### Plan Completion
+
+**New in v4.0.** The header gains a `completed` field, required when status is `complete` or `superseded`:
+
+```yaml
+---
+title: "..."
+status: draft | active | complete | superseded
+completed: YYYY-MM-DD
+---
+```
+
+When `completed` is more than 90 days old, the plan is eligible for archive (Section 26).
+
+---
+
+## 11. Research Docs
+
+Research docs in `research/` are academic manuscripts with versioned drafts progressing through peer review.
+
+### Directory Structure
+
+```
+research/
+  [project-name]/
+    manuscript/
+      v1/                           # First draft
+        main.tex
+        main.md
+        references.bib
+      v2/                           # Revision
+        main.tex
+        references.bib
+    analysis/
+      YYYY-MM-DD-topic.md
+    README.md                        # Project overview, status
+```
+
+### Key Rules
+
+1. **Never overwrite a previous version.** Create a new directory for significant revisions.
+2. **Analysis docs use YYYY-MM-DD naming** (same as plan docs).
+3. **README.md** at project root describes status, collaborators, venue, and version history.
+
+---
+
+## 12. Session Checkpoints
+
+**New in v3.0.** Session checkpoints are structured handoff documents that preserve work state across context boundaries — when a conversation ends, an agent is swapped, or a developer switches machines.
+
+### Location
+
+```
+plans/sessions/YYYY-MM-DD-topic-checkpoint.md
+```
+
+Or, if configured differently in `surfcontext.json`, at the path specified by `canonical.checkpointsDir`.
+
+### Format
+
+```markdown
+# Session Checkpoint: [Topic]
+
+> Date: YYYY-MM-DD HH:MM
+> Session: [brief identifier]
+> Status: Checkpoint | Final
+
+## Accomplished
+
+- [What was completed this session]
+- [Decisions made]
+
+## Remaining
+
+- [What still needs to be done]
+- [Blockers encountered]
+
+## Key Findings
+
+- [Important discoveries]
+- [Unexpected issues]
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `path/to/file` | Created / Modified / Deleted |
+
+## Next Steps
+
+1. [First thing to do next session]
+2. [Second thing]
+```
+
+**SurfDoc alternative (v3.1).** Projects using `.surf` extension may use YAML frontmatter:
+
+```yaml
+---
+title: "Session Checkpoint: [Topic]"
+type: session-checkpoint
+version: 1
+created: YYYY-MM-DD
+status: checkpoint | final
+tags: [session, topic]
+---
+```
+
+### When to Checkpoint
+
+1. **Context getting long.** Better to checkpoint with margin than lose work to context window compaction.
+2. **Switching agents.** When handing work from one agent type to another.
+3. **End of work session.** Before closing a conversation.
+4. **Switching machines.** When continuing work on a different computer.
+5. **Before risky operations.** Before large refactors, deployments, or irreversible changes.
+
+### Checkpoint Protocol
+
+1. Write the checkpoint file to `plans/sessions/`
+2. Include all modified file paths so the next session knows what changed
+3. Include enough context that a fresh agent can resume without re-reading everything
+4. Notify the user: "Context getting long — checkpoint saved to `plans/sessions/...`"
+
+---
+
+## 12a. Conversation Artifacts
+
+**Ratified in v4.0** (proposed in the v3.x cycle as Appendix C). Conversations capture the *reasoning* behind decisions — not just what was decided, but why, who participated, what alternatives were considered, and what actions followed.
+
+### Location
+
+```
+.context/conversations/
+  YYYY-MM-DD-topic-slug.md
+```
+
+Configurable via `canonical.conversationsDir` in `surfcontext.json`. Ratification resolves the location question: conversations are semi-evergreen reference, not time-stamped deliverables — they live under `.context/`, not `plans/`.
+
+### Format
+
+```markdown
+# Conversation: [Topic]
+
+> Date: YYYY-MM-DD
+> Participants: [agent names and/or humans]
+> Status: Active | Closed
+> Related: [paths to plans, docs, or other conversations]
+> Decision: [one-line summary, or "Pending"]
+
+## Context
+## Discussion
+### [Participant] — [timestamp or turn number]
+## Alternatives Considered
+## Decision
+## Actions
+```
+
+YAML frontmatter is canonical for `.surf` projects; the blockquote format remains valid for `.md` projects.
+
+### Rules
+
+| Rule | Detail |
+|------|--------|
+| Decision field required | One-line summary, or "Pending" for open conversations |
+| Alternatives table | Recommended for decision conversations — forces explicit comparison |
+| Status lifecycle | `Active` → `Closed`. Closed conversations are append-only; revisiting a decision means a *new* conversation referencing the old one |
+| Discovery | On-demand only — loaded when a plan/doc references it, when the *why* of a decision matters, or when resuming a handoff |
+| Types | Decision, Review, Exploration, Handoff, Incident |
+| Creation trigger | Non-obvious decisions affecting multiple files or with long-term consequences — not routine work |
+| Archive threshold | Closed conversations ≥ 365 days old are eligible for archive (Section 26) |
+| Relationship to checkpoints | Checkpoints are *summaries* of session state; conversations are *records* of reasoning |
+
+Remaining open questions (token limits, MCP conversation search, cross-repo sync) carry forward to a future version.
+
+---
+
+## 13. Discovery Order
+
+**New in v3.0 (formalized).** Discovery order defines the sequence in which agents should navigate an ARDS-compliant repository. This was implicit in v2; v3 makes it explicit and configurable.
+
+### Default Discovery Order
+
+```
+1. CONTEXT.md          — Project identity, key files, architecture, active state
+2. surfcontext.json    — Machine-readable config, platform targets, discovery hints
+3. .context/docs/      — Evergreen knowledge (architecture, conventions, schemas)
+4. .context/guides/    — Living how-to documents (implementation patterns, gotchas)
+5. .context/agents/    — Agent definitions (only the one being dispatched)
+6. .context/skills/    — Skill definitions (only on invocation)
+7. .context/queue.md   — Task queue (if multi-agent coordination is active)
+8. plans/              — Time-stamped work (glob for recent, relevant files)
+9. research/           — Academic manuscripts (only when research-related)
+10. Source code         — Follow architecture guidelines from CONTEXT.md
+```
+
+### Excluded from Discovery
+
+**New in v4.0.**
+
+```
+archive/           — frozen history, never read during normal work (Section 26)
+businessDirs       — read only when the task explicitly names them (Section 28)
+```
+
+### Workspace-Connected Discovery
+
+**New in v4.0.** When an agent is connected to a workspace layer (Sections 30–31), the workspace's context entry point is served FIRST — before the repo's `CONTEXT.md` — and workspace docs replace steps 3–4 for any artifact class whose disposition (Section 5, `workspace.dispositions`) is `workspace`. The repo file layer remains the fallback for headless and offline operation.
+
+### Token-Aware Loading
+
+Not all files should be loaded at once. The discovery order implies a loading strategy:
+
+| Step | Loading | Rationale |
+|------|---------|-----------|
+| 1. CONTEXT.md | **Always** (auto-loaded per turn) | Identity and map |
+| 2. surfcontext.json | **Always** (if tooling reads it) | Configuration |
+| 3-4. docs/ + guides/ | **On demand** (when topic matches) | Deep context |
+| 5-6. agents/ + skills/ | **On dispatch** (single file) | Agent/skill activation |
+| 7. queue.md | **On request** ("check the queue") | Multi-agent only |
+| 8-9. plans/ + research/ | **On demand** (when referenced) | Historical/analytical |
+| 10. Source code | **On demand** (when coding) | Implementation |
+
+### Custom Discovery Order
+
+Projects can override the default via `surfcontext.json`:
+
+```json
+{
+  "discoveryOrder": [
+    "CONTEXT.md",
+    "surfcontext.json",
+    ".context/docs/",
+    ".context/guides/",
+    ".context/agents/",
+    "plans/"
+  ]
+}
+```
+
+Agents and tooling should respect this order when present.
+
+---
+
+## 14. Evidence Epistemology
+
+**New in v3.0.** Evidence epistemology defines how agents handle claims, sources, and uncertainty in documents they produce. This prevents strategy built on unverified claims from compounding errors across downstream decisions.
+
+### Claim Tags
+
+All documents may include inline claim tags:
+
+| Tag | When to Use | Example |
+|-----|------------|---------|
+| `[verified]` | Claim backed by Tier 1-2 source | "Jira holds ~30% PM market share [verified — Gartner 2025]" |
+| `[unverified]` | From memory or secondary source | "Competitor raised Series B [unverified]" |
+| `[assumption]` | Logical inference, not established fact | "2% monthly churn for Year 1 [assumption]" |
+| `[internal estimate]` | Internal modeling or judgment | "Expected $5K MRR by Q2 [internal estimate]" |
+
+### Evidence Hierarchy
+
+| Tier | Source Type | Trust Level |
+|------|-----------|-------------|
+| **1** | Peer-reviewed research, SEC filings, official docs | Highest — cite directly |
+| **2** | Industry reports (Gartner, Forrester), reputable journalism | High — cite with date |
+| **3** | Blog posts, conference talks, social media | Medium — cross-reference first |
+| **4** | Internal estimates, founder intuition | Use freely, always tag |
+
+Higher tiers override lower tiers when they conflict.
+
+### Objectivity Rules
+
+1. **Present multiple perspectives** on debatable topics. Surface at least two viewpoints before recommending.
+2. **Flag assumptions explicitly.** Every projection must identify its assumptions.
+3. **Distinguish data from opinion.** "Churn decreased 15%" (data) vs. "we believe the market will consolidate" (opinion).
+4. **Never inflate metrics without sources.** TAM/SAM figures, competitor revenue, and growth rates must cite sources or carry `[internal estimate]`.
+
+### Bias Ledger
+
+Projects using evidence epistemology should maintain a bias ledger — a persistent running record of what was claimed, verified, corrected, and what patterns of overconfidence exist.
+
+Recommended location: `plans/fact-check/bias-ledger.md`
+
+Documents that have been fact-checked note it in their header: `Fact-checked: YYYY-MM-DD`.
+
+---
+
+## 15. Multi-Agent Coordination
+
+**New in v3.0 (formalized).** Multi-agent coordination defines how multiple AI agents share work within and across repositories.
+
+### Task Queue
+
+The shared task queue at `.context/queue.md` enables asynchronous coordination between agents (e.g., Claude and Codex working on the same project):
+
+```markdown
+# Agent Task Queue
+
+## Pending
+
+### TASK-001: [Title]
+
+| Field | Value |
+|-------|-------|
+| Assigned to | **[Agent]** |
+| Created by | [Agent] |
+| Priority | High / Medium / Low |
+| Status | **pending** |
+
+**What to do:**
+1. Step 1
+2. Step 2
+
+**Expected result:** [Success criteria]
+
+---
+
+## In Progress
+
+## Done
+
+## Archive
+```
+
+### Queue Protocol
+
+1. Agent creates task in Pending with clear steps
+2. Assigned agent starts → moves to In Progress
+3. On completion → fills Result, moves to Done
+4. Tasks older than 2 weeks → move to Archive
+
+**v4.0 note:** when a workspace layer is active, first-class workspace tasks (Section 32) supersede `.context/queue.md` as the coordination surface. The file queue remains the standard for file-layer-only projects and the offline fallback.
+
+### Cross-Agent Information Flow
+
+Document agent dependencies using the Cross-Agent Coordination section in agent configs:
+
+```
+competitive-intel  → battle cards  → sales-outreach
+                   → market gaps   → product-strategist
+researcher         → findings      → software-patent-lawyer
+brand-creative     → brand assets  → growth-marketing
+```
+
+### Parallel Execution Rules
+
+1. **Separate output directories.** Agents writing to the same file create conflicts.
+2. **Read-only shared context.** Knowledge docs are safe to read in parallel.
+3. **Merge outputs manually.** Human reviews parallel outputs and synthesizes.
+
+### Agent Contracts
+
+When agents depend on each other's output, the dependency should be documented in both agent configs:
+
+```markdown
+## Cross-Agent Coordination
+
+| Direction | Agent | What Flows | Format |
+|-----------|-------|-----------|--------|
+| Receives from | competitive-intel | Battle cards | `plans/competitive/YYYY-MM-DD-*.md` |
+| Sends to | sales-outreach | Positioning | `plans/sales/YYYY-MM-DD-*.md` |
+```
+
+The `Format` column (new in v3) specifies the expected file pattern, making the contract machine-readable.
+
+---
+
+## 16. Cross-Repository References
+
+**New in v3.0 (formalized).** Cross-repo references define how projects link to and read from sibling repositories.
+
+### Hub-and-Spoke Model
+
+```
+strategy-repo (HUB)
+  |── reads state from ──> product repos (SPOKES)
+  |── product repos reference back for business context
+```
+
+### Reference Syntax
+
+Always use explicit relative paths from repo root:
+
+```markdown
+# From product repo → strategy:
+../strategy-repo/.context/docs/company-overview.md
+
+# From strategy → product:
+../product-repo/CONTEXT.md
+../product-repo/package.json
+```
+
+### Repo Registry
+
+The hub repository maintains a registry of all repositories:
+
+```markdown
+# Repo Registry
+
+> Last updated: YYYY-MM-DD
+
+| Repo | Path | Stack | Purpose |
+|------|------|-------|---------|
+| strategy | (this repo) | Markdown | Command center |
+| product-app | `../product-app/` | Next.js | Main product |
+| mobile-app | `../mobile-app/` | React Native | Mobile client |
+```
+
+### Rules
+
+1. **Never duplicate** company-wide context in product repos — reference strategy.
+2. **Product repos are self-contained for development.** Cross-repo refs are for business context only.
+3. **Strategy reads product state, not code.** Check status, not implementation.
+4. **Use the repo registry** as the master index.
+
+---
+
+## 17. IP Safety
+
+**New in v3.0.** IP safety defines pre-write verification checks that protect intellectual property from misattribution, accidental disclosure, and brand contamination.
+
+### Pre-Write Checks
+
+Before writing files destined for public repositories, open source releases, or external communication:
+
+| Check | Rule |
+|-------|------|
+| **No misattribution** | IP is never attributed to another company |
+| **No AI co-author lines** | No `Co-Authored-By: Claude` or AI credits in commits |
+| **No leaked secrets** | No API keys, tokens, passwords, or credentials |
+| **No internal paths** | No absolute local filesystem paths in public content |
+| **No competitor branding** | Materials never carry competitor branding |
+
+### surfcontext.json Configuration
+
+```json
+{
+  "ipSafety": {
+    "enabled": true,
+    "owner": "Example Corp",
+    "prohibitedAttributions": ["CompetitorA", "CompetitorB"],
+    "noAiCoAuthor": true,
+    "noSecrets": true,
+    "noInternalPaths": true,
+    "noDerivativeFraming": true,
+    "noToolMakerCredit": true,
+    "registryPath": ".context/docs/ip-ownership-registry.md"
+  }
+}
+```
+
+**New in v3.1:**
+
+| Field | Purpose |
+|-------|---------|
+| `noDerivativeFraming` | Prohibit "based on," "inspired by," "similar to" framing of owned IP. AI models are biased toward attributing innovations to large companies in their training data. |
+| `noToolMakerCredit` | Separate tool usage from ownership. "Uses Claude API" (tool) is correct; "Powered by Anthropic" (ownership) is not. |
+| `registryPath` | Path to the IP ownership registry file. Agents check this before writing any document that references company technology. |
+
+### Scrubbing Rules for Public Content
+
+Content entering public repositories must be scrubbed of:
+
+1. Internal filesystem paths
+2. Financial details (unless approved)
+3. Unpublished patent content
+4. Internal strategy details
+5. API keys, tokens, and credentials
+6. Internal agent names (use generic examples)
+
+### Automated Enforcement
+
+Tools implementing ARDS should read the `ipSafety` block and enforce rules during file writes and pre-commit checks. The Surf CLI will provide `surf audit --ip-safety` for automated verification (planned).
+
+---
+
+## 18. MCP Integration
+
+**New in v3.0; rewritten in v4.0.** The Model Context Protocol (MCP) provides a standard way for AI agents to access tools and data. In v3, this section described a hypothetical read-only tool set for exposing `.context/` files. In v4, MCP is the **primary interface between an agent and the workspace layer** (Sections 30–31): the agent reads, writes, searches, and coordinates through a workspace-scoped MCP connection.
+
+### Relationship
+
+- **MCP** = the wire — how agents reach the workspace (tools, transport, auth)
+- **ARDS** = the contract — what artifact types exist, how they relate, how agents navigate them
+
+### Tool Vocabulary Requirements
+
+A conforming workspace MCP surface MUST satisfy:
+
+| Requirement | Rule |
+|-------------|------|
+| **Versioned, append-only vocabulary** | Tool names, once published, are never renamed or removed — only appended. Clients pin behavior to the vocabulary version. |
+| **Capability tiers** | Every tool belongs to a tier — `read`, `write`, or `build` — and connections carry scopes that gate which tiers are advertised. |
+| **Explicit availability** | A tool that exists but is not usable in the current context reports `Gated` with a reason, rather than disappearing silently. |
+| **Full artifact coverage** | The vocabulary covers the ARDS artifact classes it hosts: docs (create/read/edit/list/versions), folders, tasks (Section 32), search, and — where offered — repo read access, site/app publication, and communication surfaces. |
+| **Search parity** | Workspace search must meet the recall an agent would get from grepping the equivalent file tree. If it cannot, the file layer remains authoritative for discovery. |
+
+### Connection Contract
+
+| Property | Rule |
+|----------|------|
+| **Workspace-pinned credentials** | A credential is minted for exactly one workspace and cannot be repointed. Working in a second workspace requires a second credential. This is the enforcement mechanism for scope isolation (Section 30). |
+| **Scoped grants** | Scopes (e.g. `read`, `write`, `admin`, agent-execution) are fixed at mint time; tools outside granted scopes are not advertised. |
+| **OAuth 2.1 for interactive clients** | Interactive connect flows use standard OAuth 2.1 discovery + PKCE. Key-paste remains valid for headless/CI contexts. |
+| **Identity check** | The surface exposes a `whoami`-class tool so an agent can verify which workspace and scopes it holds before concluding that content "does not exist." |
+
+### Reference Implementation
+
+Surfspace (by CloudSurf Software) implements this contract: per-workspace pinned MCP connections over Streamable HTTP, OAuth 2.1 interactive auth, an append-only tool vocabulary spanning docs, folders, tasks, search, repo access, and publication, with capability tiers and per-tool gating.
+
+---
+
+## 19. Context Budget Management
+
+**New in v3.0.** Context budget management treats the AI agent's context window as a finite computational resource that must be allocated deliberately.
+
+### The Problem
+
+AI agents operate within fixed context windows (typically 128K-200K tokens). Every file loaded consumes budget. Poor allocation leads to:
+
+- Important context evicted by irrelevant content
+- Agent forgetting earlier instructions mid-conversation
+- Wasted tokens on stale or duplicate information
+
+### Budget Allocation Strategy
+
+| Content Class | Budget Share | Loading Strategy |
+|--------------|-------------|-----------------|
+| System prompt + CONTEXT.md | 5-10% | Always loaded |
+| Active working files | 30-50% | Loaded for current task |
+| Reference docs + guides | 10-20% | On demand |
+| Agent/skill definitions | 5-10% | On dispatch |
+| Conversation history | 20-30% | Managed by platform |
+
+### Progressive Disclosure Protocol
+
+1. **Load CONTEXT.md** — provides the map.
+2. **Identify needed docs** — from key files table and task requirements.
+3. **Load only relevant docs/guides** — not the entire `.context/` directory.
+4. **Checkpoint when long** — save state before context fills (see Section 12).
+5. **Prune completed context** — when a subtask finishes, its context can be released.
+
+### CONTEXT.md as Budget-Aware Index
+
+CONTEXT.md serves as a token-efficient index. By maintaining a key files table with one-line descriptions, agents can decide which files to load without reading them all:
+
+```markdown
+## Key Files
+
+| Path | Purpose |
+|------|---------|
+| `.context/docs/architecture.md` | System structure, data flow |
+| `.context/docs/api.md` | REST + GraphQL endpoint reference |
+| `.context/guides/deploying.md` | AWS deployment with gotchas |
+```
+
+An agent needing to deploy reads `deploying.md`. An agent fixing a bug reads `architecture.md`. Neither loads both unless needed.
+
+---
+
+## 20. Token Budget Guidance
+
+### Cost Estimates
+
+| Content | Lines | Tokens | 30-Turn Cost |
+|---------|-------|--------|-------------|
+| CONTEXT.md (200 lines) | 200 | ~800 | ~24,000 |
+| CONTEXT.md (300 lines) | 300 | ~1,200 | ~36,000 |
+| Agent config (100 lines) | 100 | ~400 | ~400 (once) |
+| Knowledge doc (150 lines) | 150 | ~600 | ~600 (once) |
+| Guide (200 lines) | 200 | ~800 | ~800 (once) |
+| Plan doc (200 lines) | 200 | ~800 | ~800 (once) |
+
+### Optimization Strategies
+
+1. **Move rarely-needed content to `.context/docs/`.** If agents read it < 20% of sessions, extract from CONTEXT.md.
+2. **Use tables over prose.** A 3-column table conveys the same info at ~1/3 the tokens.
+3. **Link, don't summarize.** Path + one-line description, not a summary.
+4. **Prune Active Work.** Remove completed items from CONTEXT.md.
+5. **Limit plan references to 5-6.** Agents can glob `plans/` for the rest.
+
+---
+
+## 21. Platform Compatibility
+
+### Claude Code (Anthropic)
+
+- Auto-loads `CLAUDE.md` every turn
+- Agents from `.claude/agents/` dispatched by description match
+- Skills from `.claude/skills/` invoked by `/command` or description match
+- Context window: ~200K tokens
+
+### Codex CLI (OpenAI)
+
+- Reads `AGENTS.md` as project context
+- Supports Agent Skills (`SKILL.md` format)
+- Reads `PLANS.md` for multi-hour problems
+- 32 KiB default limit on project docs
+- Sandboxed (no internet)
+
+### Cursor
+
+- `.cursor/rules/*.mdc` with YAML frontmatter and glob scoping
+- Rules scoped to file patterns
+- No agent dispatch
+
+### GitHub Copilot
+
+- `.github/copilot-instructions.md` (workspace-wide)
+- `.github/instructions/*.instructions.md` (path-specific with `applyTo`)
+- No agent dispatch
+
+### Windsurf
+
+- `.windsurfrules` at repo root
+- Single context file, no agent dispatch
+
+---
+
+## 22. ARDS as Superset
+
+ARDS is not competing with AGENTS.md, Agent Skills, or MCP. It is a superset that defines the full documentation architecture:
+
+```
+ARDS (full documentation system)
+  |
+  |── Root Context      → AGENTS.md, CLAUDE.md, copilot-instructions.md
+  |── Agents/Skills     → Agent Skills (SKILL.md), .cursor/rules/*.mdc
+  |── Knowledge Docs    → unique to ARDS
+  |── Guides            → unique to ARDS
+  |── Plan Docs         → PLANS.md (Codex)
+  |── Research Docs     → unique to ARDS
+  |── Session Checkpoints → unique to ARDS
+  |── Cross-Repo Refs   → unique to ARDS
+  |── Evidence System   → unique to ARDS
+  |── IP Safety         → unique to ARDS
+  |── MCP Integration   → bridges ARDS content to MCP tools
+```
+
+Teams that outgrow a single context file — because they need specialist agents, deep docs, implementation guides, decision records, and cross-repo references — are the audience for ARDS.
+
+### Relationship to Standards
+
+| Standard | Covers | ARDS Relationship |
+|----------|--------|-------------------|
+| **AGENTS.md** (AAIF) | Single root context | Maps to ARDS Root Context |
+| **Agent Skills** | Cross-platform skills | Maps to ARDS Skill Configs |
+| **MCP** | Agent tool access | Orthogonal: MCP = tools, ARDS = knowledge |
+| **PLANS.md** (Codex) | Problem-solving context | Maps to ARDS Plan Docs |
+| **llms.txt** | LLM-readable site summary | Orthogonal: site-level, not repo-level |
+
+---
+
+## 23. Quality Scoring
+
+### Dimensions
+
+Each dimension scores 0-3:
+
+| Score | Meaning |
+|-------|---------|
+| 3 | Fully compliant |
+| 2 | Partially compliant |
+| 1 | Minimally compliant |
+| 0 | Missing |
+
+### CONTEXT.md (max 27)
+
+| Dimension | Max |
+|-----------|-----|
+| Exists at repo root | 3 |
+| Under line limit | 3 |
+| Key Files table | 3 |
+| Architecture section | 3 |
+| Stack section | 3 |
+| Development section | 3 |
+| Active Work section | 3 |
+| Cross-Repo section | 3 |
+| Agents section | 3 |
+
+### Agent Coverage (max 21)
+
+| Dimension | Max |
+|-----------|-----|
+| Count appropriate (3-5 product, 5-25 command center) | 3 |
+| YAML frontmatter complete | 3 |
+| Descriptions 80-150 chars, action-oriented | 3 |
+| No overlapping scope | 3 |
+| Tools appropriate | 3 |
+| Output locations specified | 3 |
+| Model selection justified | 3 |
+
+### Knowledge Docs (max 15)
+
+| Dimension | Max |
+|-----------|-----|
+| Directory exists | 3 |
+| Standard docs present | 3 |
+| All docs have dates | 3 |
+| No doc exceeds 400 lines | 3 |
+| Content is evergreen | 3 |
+
+### Guides (max 12, new in v3)
+
+| Dimension | Max |
+|-----------|-----|
+| Directory exists | 3 |
+| Guides have confidence levels | 3 |
+| Guides have table of contents | 3 |
+| Gotcha callouts use standard format | 3 |
+
+### Plans (max 12)
+
+| Dimension | Max |
+|-----------|-----|
+| YYYY-MM-DD naming | 3 |
+| Header metadata | 3 |
+| Category subdirectories | 3 |
+| Active plans referenced in CONTEXT.md | 3 |
+
+### Total: up to 87 points (product) or 99 points (command center with guides + plans)
+
+| Range | Rating |
+|-------|--------|
+| 85-99 | Excellent |
+| 65-84 | Good |
+| 45-64 | Fair |
+| 25-44 | Poor |
+| 0-24 | Non-compliant |
+
+---
+
+## 24. Freshness Monitoring
+
+| Document Type | Threshold | Action When Exceeded |
+|--------------|-----------|---------------------|
+| CONTEXT.md | 7 days | Review Active Work; prune completed items |
+| Agent Config | 30 days | Verify scope, tools, model still match |
+| Knowledge Doc | 30 days | Update or add `[STALE]` warning |
+| Guide | 30 days | Review confidence; flag for re-validation |
+| Plan Doc | N/A | Mark as Superseded when replaced |
+| Checkpoint | N/A | Time-stamped by design |
+| Research Doc | 60 days (during active drafting) | Flag for author review |
+
+### Archive Thresholds
+
+**New in v4.0.** Freshness monitoring feeds the archival lifecycle (Section 26):
+
+| Document Type | Freshness Threshold | Archive Threshold |
+|--------------|---------------------|-------------------|
+| Knowledge doc (active topic) | 30 days → flag | 365 days → audit for archive |
+| Knowledge doc (deferred topic) | n/a | 90 days → archive |
+| Plan (status: complete) | n/a | 90 days → archive |
+| Plan (status: superseded) | n/a | 0 days → archive |
+| Session checkpoint | n/a | 120 days → archive |
+| Guide (confidence: low, unchanged) | 30 days → re-validate | 180 days → archive or promote |
+| Conversation (closed) | n/a | 365 days → archive |
+
+Tooling commands:
+
+```
+$ surf audit --freshness
+  .context/docs/architecture.md   (updated 2026-02-01, 9 days ago)  — OK
+  .context/guides/deploying.md    (updated 2026-01-15, 26 days ago) — OK
+  .context/docs/api.md            (no date found)                   — MISSING DATE
+
+$ surf audit --stale
+  plans/develop/2026-02-24-backend-merge/   (status: complete, 96 days)  — eligible
+  .context/docs/deferred-product-notes.md   (topic deferred)             — archive
+  plans/dev/                                (deprecated category)        — archive
+
+$ surf audit --archive-ready
+  [shows only items past archive threshold]
+```
+
+Agents must surface audit output but must not auto-archive (Section 26).
+
+---
+
+## 25. Migration Guide
+
+### v2.0 to v3.0
+
+All v3 additions are optional. A valid v2 project is already a valid v3 project. To adopt v3 features:
+
+1. **Update surfcontext.json** — bump `version` to `"3.0"`, add new fields (`guidesDir`, `checkpointsDir`, `discoveryOrder`, `ipSafety`, `mcp`)
+2. **Create `.context/guides/`** — move or create living how-to documents with confidence levels and gotcha callouts
+3. **Create checkpoint directory** — start writing session checkpoints to `plans/sessions/`
+4. **Add claim tags** — tag claims in strategic documents with `[verified]`, `[unverified]`, `[assumption]`, `[internal estimate]`
+5. **Add discovery order** — document your project's discovery order in surfcontext.json or CONTEXT.md
+6. **Configure IP safety** — add `ipSafety` block to surfcontext.json if relevant
+7. **Add agent contracts** — include `Format` column in Cross-Agent Coordination tables
+
+### v3.x to v4.0
+
+The file layer is unchanged — a valid v3 project is a valid v4 project with zero edits. To adopt v4 features:
+
+1. **Bump `surfcontext.json` version** to `"4.0"`.
+2. **Lifecycle (Sections 26–29):** add `archive/` to `.gitignore`; create an archive sweep script (dry-run default, MANIFEST required); declare `businessDirs` for every non-ARDS top-level directory; declare `sizeBudgets`; canonicalize plan category names; rotate old checkpoints.
+3. **Conversations (Section 12a):** if using conversation artifacts, confirm the `.context/conversations/` location and YAML frontmatter for `.surf` projects.
+4. **Workspace layer (Sections 30–34), adopted incrementally:**
+   a. Connect agents to the workspace via a pinned MCP credential (Section 18).
+   b. Declare the `workspace` block with a disposition map (Section 5).
+   c. Migrate high-churn docs (active work, queue, current plans) to the workspace; freeze their git counterparts as archive.
+   d. Adopt workspace tasks (Section 32) in place of `.context/queue.md`.
+   e. Optionally adopt agent playbooks (Section 33) and executable skills (Section 34).
+5. **Nothing is mandatory.** A file-layer-only project remains fully conforming; the workspace layer is an additive profile.
+
+### From platform-specific to ARDS
+
+1. Create `.context/` with `agents/` and `docs/`
+2. Write `CONTEXT.md` from existing root context
+3. Move agent/doc files to `.context/`
+4. Create `surfcontext.json`
+5. Set up generation (symlinks or sync script)
+6. Test platform-specific tool still works
+
+---
+
+## 26. Archival Lifecycle
+
+**New in v4.0** (drafted in the v3.x cycle). ARDS formalizes `archive/` as a first-class artifact bucket: where completed, superseded, and misplaced content goes when it should leave the working tree but must not be destroyed. `archive/` is **gitignored by default** — it is local scratch, not repo history. (Projects that want checked-in archives may set `archive.gitignore: false`; supported, not default.)
+
+### Location & Structure
+
+```
+project-root/
+  archive/                              # top level, gitignored by default
+    YYYY-MM-DD-reason-slug/             # one dir per archive sweep
+      MANIFEST.txt                      # required: SOURCE -> DEST, one per line
+      <bucket>/                         # categorized move targets
+    README.md                           # optional: human-readable index
+```
+
+### Transition Rules
+
+| From state | To state | Trigger | Action |
+|-----------|----------|---------|--------|
+| Plan `Status: Active` | Plan `Status: Complete` | Work shipped | Leave in place ≤ 90 days, then archive |
+| Plan `Status: Superseded` | Archived | Replacement plan merged | Archive immediately |
+| Knowledge doc unchanged ≥ 180 days AND topic deferred | Archived | Product lifecycle change | Archive with `reason: deferred` in MANIFEST |
+| Root-level asset not in inventory (Section 27) | Archived | Discovered by audit | Archive on next sweep |
+| Session checkpoint ≥ 120 days old | Archived | Rotation | Move to `archive/sessions/<year>/` |
+| Anything in `archive/` | Never restored silently | — | Restoration requires explicit script invocation, never an agent decision |
+
+### MANIFEST.txt
+
+Required, one line per move, `SOURCE -> DEST`. Agents reading MANIFEST.txt can reverse-lookup any path that used to exist — git log cannot serve this role once the archive is gitignored.
+
+### Agent Behavior
+
+1. **Never write to `archive/`.** Only sweep scripts move files in. An agent searching for an archived file must stop and ask before re-creating it.
+2. **Never read `archive/` during discovery** (Section 13).
+3. **Stale detection surfaces, never executes.** Agents MAY run `surf audit --stale` and present candidates, but must not auto-archive.
+4. **Sweeps require confirmation.** Dry-run by default; `--apply` only after human review.
+
+### Required Tooling
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/archive-stale.sh` (or equivalent) | Dry-run default, `--apply` to execute, phased, idempotent, collision-safe (timestamp suffix), writes MANIFEST.txt |
+| `scripts/archive-restore.sh` (optional) | Look up MANIFEST.txt, copy a file back to its original location |
+
+---
+
+## 27. Root-File Inventory
+
+**New in v4.0.** The project root is the most visible surface of the repo. What may live at the root is a closed list.
+
+### Allowed Root Files
+
+| File | Role | Required? |
+|------|------|-----------|
+| `CONTEXT.md` / `CONTEXT.surf` | Root context | Yes |
+| `surfcontext.json` | ARDS config | Strongly recommended |
+| `SPEC.*` / `CHANGELOG.*` | Spec + version history | Spec repos only / recommended |
+| `README.md` | GitHub convention | Recommended |
+| `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.windsurfrules` | Generated platform files | As needed |
+| Build manifests (`package.json`, `Cargo.toml`, …) | Build | As needed |
+| `.gitignore`, `.editorconfig`, `.env.example` | Tooling config | As needed |
+| `LICENSE`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md` | OSS conventions | Optional |
+
+### Allowed Root Directories
+
+`.context/`, platform-generated dirs (`.claude/`, `.cursor/`, `.github/`, …), `plans/`, `research/`, `scripts/`, `assets/`, `archive/`, and anything declared in `businessDirs` (Section 28).
+
+### Disallowed at Root
+
+Loose media files (→ `assets/` or a brand business dir), test scratch files (→ delete or archive), imported ZIPs (→ archive), files belonging to unrelated projects (→ their own repo or archive). An undeclared root artifact is an audit finding, not a neutral state.
+
+---
+
+## 28. Business Artifact Directories
+
+**New in v4.0.** Command-center repos host more than code artifacts: legal docs, financial records, client deliverables, brand assets. These are **business artifact directories**, declared in `surfcontext.json`:
+
+```json
+{
+  "businessDirs": {
+    "brand": { "purpose": "Brand assets, logo lockups", "retention": "evergreen", "public": false },
+    "legal": { "purpose": "Corporate docs, contracts", "retention": "evergreen", "public": false },
+    "taxes-2025": { "purpose": "Financial records, 2025 tax year", "retention": "7-year", "public": false },
+    "templates": { "purpose": "Reusable doc templates", "retention": "evergreen", "public": true }
+  }
+}
+```
+
+### Rules
+
+1. **Top-level and named literally.** No nesting under a `business/` umbrella — agents need explicit, greppable paths.
+2. **Every top-level non-ARDS directory must be declared.** An undeclared directory is a smell the archive audit surfaces.
+3. **Retention is per directory**: `evergreen`, `N-year`, `per-client`, `project-lifetime`. Year-scoped directories (`taxes-2025/`) roll into `archive/` when retention lapses.
+4. **The `public` flag governs OSS exports.** Content from `public: false` dirs must never ship in public mirrors — this feeds the IP safety checks (Section 17).
+5. **Not part of discovery order.** Agents load from business dirs only when the task explicitly names them.
+
+---
+
+## 29. Directory Size Budgets
+
+**New in v4.0.** Oversized directories break agent globbing and hurt onboarding. Each directory class has a ceiling above which it must split or archive.
+
+### Default Budgets
+
+| Directory | Budget | When exceeded |
+|-----------|--------|---------------|
+| `.context/docs/` | 30 files | Extract to topic subdirs, or archive stale |
+| `.context/guides/` | 25 files | Split by platform or domain |
+| `.context/agents/` | 25 files | Audit for overlap; retire duplicates |
+| `.context/skills/` | 50 skills | Namespace or retire |
+| `plans/<category>/` | 50 items | Split by year, archive completed |
+| `plans/develop/` | 100 items | Year-bucket: `plans/develop/<year>/` |
+| `plans/sessions/` | 200 items | Archive to `archive/sessions/<year>/` |
+| `research/` | no budget | Research is long-lived |
+| `archive/` | no budget | Archive is the overflow |
+
+Budgets are configurable via `sizeBudgets` (Section 5).
+
+### Year-Bucketing
+
+When `plans/develop/` exceeds budget, completed entries rotate into year-buckets (`plans/develop/2026/…`) while active work stays flat. This is the one permitted 4-level depth exception (Section 3). The audit surfaces the trigger; a human approves the rotation; the script rewrites incoming references.
+
+---
+
+## 30. Workspace Model and Scopes
+
+**Ratified in v4.0** (proposed in the v3.x cycle as Appendix D). ARDS v1–v3 defines how a *repository* presents context. v4 defines how context extends across the layers a person and a team actually work in.
+
+### The Scope Model
+
+Every ARDS artifact carries a scope. The enum, already shipping in SurfDoc frontmatter (`scope:`), is:
+
+| Scope | Visibility | Example |
+|-------|-----------|---------|
+| `personal` | One person, all workspaces | Preferences, cross-project notes |
+| `workspace-private` | One person within one workspace | Draft docs, meeting notes not yet shared |
+| `workspace` | All members of one workspace | Shared architecture decisions, team guides |
+| `repo` | Anyone with repo access | Repo-specific docs, agents, skills |
+| `public` | Everyone | Published specs, OSS documentation |
+
+### Layer Merge Semantics
+
+When an agent loads context, layers merge in priority order (highest wins): **repo → workspace shared → workspace-private → personal**. Repo facts are most specific and always win; team conventions override personal preference; agents should note when answering from a lower-priority source.
+
+### Workspace Isolation
+
+Workspaces are **hard boundaries**, enforced at the credential level (Section 18):
+
+| Action | Allowed |
+|--------|---------|
+| Read your personal docs from any workspace | Yes |
+| Read shared docs of workspaces you belong to | Yes |
+| Read shared docs of other workspaces | No — the pinned credential structurally cannot |
+| Contribute the same doc to multiple workspaces | Yes — explicit, per-workspace |
+| Auto-sync between workspaces | No — cross-workspace flow is always explicit |
+
+This isolation is an IP-safety property: an agent working a proprietary workspace and an open-source workspace must be *unable* — not merely instructed not — to leak context between them.
+
+### Contribution Workflow
+
+Promoting a `workspace-private` doc to `workspace` scope is an explicit **contribute** action: copy (not move), attribution recorded (contributor + date), team-editable thereafter, reversible by a workspace admin without touching the contributor's original.
+
+### Preferences
+
+User-level preferences (identity, working style, confirmation rules, per-workspace role overrides) live at the personal scope and apply everywhere the user works. Per-workspace overrides let the same person carry different authority in different contexts — a founder approves in their own workspace what a contractor never should in a client's. Preferences must never be committed to a shared repo.
+
+---
+
+## 31. Workspace as Command Center
+
+**New in v4.0.** The defining v4 pattern: the **workspace is the command center** — the place where knowledge lives, work is coordinated, and agents are launched. The git repo that served as the v1–v3 command center is demoted to a *tooling shell and archive*.
+
+### Why
+
+In a multi-machine, multi-agent file-layer project, shared docs are invisible to other machines until committed and pushed — the "owed commit" is structural, and merge reconciliation is perpetual (v3.2's fragment directories treat the symptom). Moving the high-churn context to a workspace with server-side state removes the class of problem: every machine and agent reads and writes the same live objects through MCP.
+
+### Disposition Map
+
+Not everything moves. The `workspace.dispositions` block (Section 5) declares, per artifact class, where the source of truth lives:
+
+| Artifact class | Typical disposition | Reason |
+|---------------|--------------------|--------|
+| Knowledge docs, guides | `workspace` | High-churn, shared, benefit from live state |
+| Active plans, queue | `workspace` / `workspace-tasks` | Coordination surfaces (Section 32) |
+| Context entry point | `workspace` | Served first on connection (Section 13) |
+| Skills, agent configs | `repo` | Loaded from disk by agent harnesses |
+| Research manuscripts, scripts, brand assets | `repo` | File-native toolchains |
+| Historical plans, checkpoints | `repo-archive` | Frozen git history |
+
+### Rules
+
+1. **No dual edit surfaces.** The moment an artifact's disposition is `workspace`, the git copy is frozen (archive) — it is never edited again. Tenet 11.
+2. **Cloud is source of truth; local is a cache.** Tooling (`surf pull`) may materialize workspace content into the file layer for offline/headless work; the materialized copy is generated output (tenet 8).
+3. **Offline/headless fallback.** When the workspace is unreachable (cron jobs, no interactive auth), agents read the frozen file layer and queue writes as local scratch for reconciliation — availability degrades gracefully to v3 behavior.
+4. **Session continuity runs server-side.** The context entry point, fragment/rollup generation, and checkpoint records become workspace objects maintained by the platform rather than local scripts.
+5. **Export is mandatory.** A conforming workspace must support full export of a workspace's docs — the anti-lock-in guarantee that keeps the file layer a real fallback.
+6. **Addressing.** Workspace docs referenced from any shared or public artifact use their public, stable URL form — never internal editor URLs.
+
+---
+
+## 32. Tasks and Stages
+
+**New in v4.0.** Workspace tasks are the first-class successor to `.context/queue.md` (Section 15): typed objects with assignees, hierarchy, staged lifecycles, and stage-bound artifacts.
+
+### Stage Lifecycle
+
+```
+todo → research → plan → design → breakdown → build → verify → done
+                          (any stage) → blocked
+```
+
+The stage enum mirrors the development lifecycle so that an agent picking up a task knows *what kind of work* the task currently needs, not just that it is "in progress."
+
+### Artifacts as Memory
+
+Each stage may bind one or more **artifacts** — workspace docs attached to the task at that stage (research notes at `research`, a plan doc at `plan`, a build summary at `build`). The task's artifact chain IS the agent's working memory across sessions: a fresh agent resumes by reading the task, its comments, and its stage artifacts — not by replaying a transcript.
+
+### Rules
+
+| Rule | Detail |
+|------|--------|
+| Assignees | Tasks are assigned to humans or to the workspace agent; assigning to the agent is the hand-off into agent execution (Section 33) |
+| Hierarchy | Tasks may have parent tasks; a breakdown stage typically emits child tasks |
+| Comments as checkpoints | Progress notes land as task comments — the durable, human-visible equivalent of session checkpoints |
+| Metering | Agent work on a task records its resource usage (e.g. token counts) against the task |
+| The board is the register | For requirement-shaped work, the live task board is the requirements traceability matrix; the doc remains the narrative artifact |
+
+---
+
+## 33. Agent Launch and Playbooks
+
+**New in v4.0.** When an agent is launched *from* a workspace object (a task assignment, a summon), its execution contract is a **playbook** — a declared, auditable scope of authority. A playbook specifies:
+
+| Element | Purpose |
+|---------|---------|
+| **Entry condition** | What state triggers this playbook (e.g. task assigned to agent, stage = `todo`) |
+| **Prompt composition** | What context is assembled: the task, its artifact chain, the workspace context entry point, the method (e.g. an SDLC skill) |
+| **Tool allow-list** | The exact tools the agent may call — task reads/writes, artifact writes, comments, doc/search/repo reads, doc creation |
+| **Tool deny-list** | What it must not touch — self-referential task creation, deletion, billing, outbound communication (sending is a human action) |
+| **Stage-authority ceiling** | The highest stage the agent may set (e.g. ≤ `verify`; only a human moves work to `done`) |
+| **Heartbeat & stall semantics** | Periodic liveness signals; a reaper detects stalls and marks the run failed rather than leaving zombie claims |
+| **Metering** | Per-run resource accounting attached to the task |
+
+### Principles
+
+1. **Authority is declared, not assumed.** The allow/deny lists are the contract; a playbook change is a reviewable event.
+2. **Deny-by-default for outward actions.** Publishing, sending, deleting, and spending are human actions unless a playbook explicitly — and narrowly — grants them.
+3. **Artifacts over transcripts.** The run's durable output is task comments + stage artifacts, which any successor (human or agent) can resume from.
+4. **Escalation is a first-class outcome.** A playbook run that hits its authority ceiling checkpoints its state and hands back to a human — that is success, not failure.
+
+---
+
+## 34. Skill Runtime and Executable Plans
+
+**New in v4.0.** In v1–v3, skills are prompt documents interpreted by a third-party harness (Section 7). v4 adds the **executable profile**: a skill may define a deterministic orchestration that a conforming runtime executes directly, with the **plan document as its input**.
+
+### The Contract
+
+```
+runner <skill-name> <plan-file>
+```
+
+| Property | Rule |
+|----------|------|
+| **Plan as input** | The dated plan doc (Section 10) is the executable's argument — the same artifact humans review is what the runtime runs |
+| **Orchestration primitives** | A minimal set: spawn agent (with optional structured-output schema, phase label, isolation), parallel barrier, per-item pipeline, phase/log markers, args, budget |
+| **Determinism for resume** | Scripts avoid nondeterministic sources (clock, randomness); every agent invocation is journaled so an interrupted run resumes from the longest unchanged prefix |
+| **Structured outputs validated at the boundary** | Schema mismatches retry at the tool layer, bounded, rather than propagating malformed data |
+| **Isolation on demand** | Agents that mutate files in parallel run in isolated worktrees |
+| **Budget as a ceiling** | A declared token/resource budget is a hard stop, not advisory |
+| **Outputs are ARDS artifacts** | Runs emit their state and summary into the plan's directory (`BUILD-STATE`, `BUILD-SUMMARY`) or the task's artifact chain (Section 32) |
+
+### Skill Directory Extension
+
+Executable skills may carry supporting subdirectories beyond v3's flat supporting files — e.g. `lanes/` for per-lane cards in a multi-lane build skill. Discovery is unchanged: `SKILL.*` remains the entry point.
+
+---
+
+## 35. Generation and Sync Integrity
+
+**New in v4.0.** ARDS tooling generates files (Section 5 bridges), injects rule blocks, and materializes workspace content (Section 31). v4 makes the integrity of that machinery normative — motivated by observed failure modes in production, where a non-idempotent sync duplicated injected banners and rewrote canonical paths into generated ones.
+
+| Requirement | Rule |
+|-------------|------|
+| **Idempotent injection** | An injected block carries a stable marker; re-running the generator replaces the marked block, never appends a second copy |
+| **Round-trip verifiability** | `generate → verify` must be a supported cycle: tooling can prove that generated output corresponds to canonical source, and flag drift |
+| **Direction enforcement** | Generators must refuse to write canonical paths from generated content; path-rewrite rules must be anchored (never rewriting their own rule text) |
+| **Self-audit** | Sync tooling audits canonical files for accidental references to generated paths — and its own past corruption (duplicate markers) — on every run |
+| **Generated means disposable** | A generated file must be reconstructible from canonical source alone at any time; if deleting it loses information, it was not generated output |
+
+---
+
+## Appendix A: Anti-Patterns
+
+| Anti-Pattern | Fix |
+|-------------|-----|
+| Monolithic CONTEXT.md (300+ lines in product repo) | Split into CONTEXT.md + `.context/docs/` |
+| Missing agents | Bootstrap 3-5 stack-appropriate agents |
+| Vague agent descriptions | Rewrite: verb + domain + specifics |
+| Duplicated company context | Reference strategy repo |
+| No key files table | Add 8-15 entry table |
+| Deep nesting (4+ levels) | Flatten to 2 levels |
+| Undocumented conventions | Create `.context/docs/conventions.md` |
+| Stale Active Work | Update or remove after each deploy |
+| Plans without dates | Use `YYYY-MM-DD` prefix |
+| Knowledge docs without dates | Add `> Last updated:` |
+| Agent with every tool | Match tools to actual needs |
+| Prose where tables work | Convert to tables |
+| Mixing evergreen and time-stamped | Separate docs and plans |
+| No guides for complex domains | Create `.context/guides/` with gotchas |
+| No checkpoints in long sessions | Write checkpoints before context fills |
+| Untagged claims in strategy docs | Add evidence tags |
+| 20+ loose image files at repo root | Move to a brand/assets dir or archive (Section 27) |
+| Duplicate `CLAUDE.md` and `CLAUDE.surf` | Keep only the one tooling reads |
+| Undeclared top-level directories | Declare in `businessDirs` or archive (Section 28) |
+| Editing the frozen git copy of a workspace doc | The workspace is the source of truth; the git copy is archive (Section 31) |
+| Agent moving its own task to `done` | `done` is above the stage-authority ceiling — a human closes work (Section 33) |
+| Non-idempotent sync injection | Marked blocks, replace-not-append (Section 35) |
+
+---
+
+## Appendix B: Changelog
+
+Full changelog: `CHANGELOG.surf`
+
+### v4.0 (2026-08-18)
+
+**The workspace release.** ARDS extends from a file standard into a workspace standard:
+
+- Workspace Model & Scopes — five-scope model (`personal | workspace-private | workspace | repo | public`), layer merge semantics, hard workspace isolation, contribution workflow (Section 30; ratifies Appendix D)
+- Workspace as Command Center — knowledge-context unification, disposition map, cloud-as-source-of-truth with file-layer fallback, mandatory export (Section 31)
+- MCP Integration rewritten — real connection contract: versioned append-only tool vocabulary, capability tiers, gated availability, workspace-pinned credentials, OAuth 2.1 (Section 18)
+- Tasks & Stages — 8-stage lifecycle, artifacts-as-memory, supersedes `.context/queue.md` when a workspace is active (Section 32)
+- Agent Launch & Playbooks — declared tool allow/deny lists, stage-authority ceilings, heartbeat/stall semantics, metering (Section 33)
+- Skill Runtime & Executable Plans — plan-as-input executable skills, journaled deterministic resume, budget ceilings (Section 34)
+- Generation & Sync Integrity — idempotent injection, round-trip verification, direction enforcement (Section 35)
+- Lifecycle ratifications from the v3.x cycle: Archival Lifecycle (26), Root-File Inventory (27), Business Artifact Directories (28), Directory Size Budgets (29), Conversation Artifacts (12a), canonical plan categories + `completed` field (10), archive thresholds (24), design tenets 10–11
+- New `surfcontext.json` fields: `canonical.archiveDir`, `canonical.conversationsDir`, `businessDirs`, `sizeBudgets`, `archive`, `workspace`
+
+**Breaking changes:** None. The file layer is unchanged — a valid v3 project is a valid v4 project. Every workspace-layer feature is additive and optional.
+
+### v3.2 (2026-06-03)
+
+- Append-Only Fragment Directories — concurrency-safe high-churn shared docs: immutable uniquely-named fragments, committed directory as source of truth, bounded gitignored rollup regenerated at checkpoints and session start
+- `fragmentStreams` field in surfcontext.json
+- Reference implementation: `scripts/build-context-rollup.py`
+
+**Breaking changes:** None.
+
+### v3.1 (2026-02-23)
+
+**New features (all backward-compatible):**
+- SurfDoc file extension support — `.surf` as preferred extension via `format` field
+- Topic routing — `topics` field in surfcontext.json for keyword-to-path agent navigation
+- Active Work extraction — summary table in CONTEXT.md + detail file on demand (47% token savings)
+- Direct bridge strategy — `"method": "direct"` when canonical file IS the platform file
+- Command stub delegation — `.claude/commands/*.md` stubs delegate to `.context/skills/`
+- SurfDoc YAML frontmatter — alternative to blockquote metadata for plans and checkpoints
+- Extended IP safety schema — `noDerivativeFraming`, `noToolMakerCredit`, `registryPath`
+- Changelog extraction — full version history moved to `CHANGELOG.surf`
+
+**Breaking changes:** None. All v3.0 projects are valid v3.1.
+
+### Previous versions
+
+- **v3.0** (2026-02-10) — Guides, checkpoints, evidence epistemology, discovery order, multi-agent coordination, cross-repo refs, IP safety, MCP, context budget
+- **v2.0** (2026-01-31) — Skills, research docs, scoring rubric, freshness monitoring, token budget, ARDS-as-superset
+- **v1.0** (2026-01-15) — Initial specification (CONTEXT.md, agents, docs, plans)
+
+---
+
+## Appendix C: Conversation Artifacts
+
+> **Status: RATIFIED in v4.0 as Section 12a.** This appendix is retained as the detailed reference for the conversation format. Where this appendix and Section 12a differ, Section 12a is normative. Ratification resolved the open questions below as follows: location is `.context/conversations/` (not `plans/`); YAML frontmatter is canonical for `.surf` projects; conversations stay on-demand in discovery; closed conversations ≥ 365 days are archive-eligible. Token limits, MCP conversation search, and cross-repo sync remain open for a future version.
+
+### Motivation
+
+ARDS defines seven artifact types: root context, agents, skills, docs, guides, plans, and research. All are **static** — they describe a state of the world. None capture the **dynamic process** of arriving at that state.
+
+In practice, the most valuable context for an agent resuming work is often: "What was the conversation that led to this decision?" Session checkpoints (Section 12) partially address this but are write-once summaries, not structured records of multi-turn reasoning.
+
+Conversations fill three gaps:
+
+| Gap | Current State | With Conversations |
+|-----|--------------|-------------------|
+| **Decision reasoning** | Plans say *what* was decided | Conversations show *why* and *what was rejected* |
+| **Multi-agent handoff** | Queue has task description | Conversations carry full discussion context |
+| **Institutional memory** | Lost when sessions end | Structured, searchable, cross-referenced |
+
+### Location
+
+```
+.context/conversations/
+  YYYY-MM-DD-topic-slug.md
+```
+
+Or, if configured in `surfcontext.json`:
+
+```json
+{
+  "canonical": {
+    "conversationsDir": ".context/conversations"
+  }
+}
+```
+
+### Format
+
+```markdown
+# Conversation: [Topic]
+
+> Date: YYYY-MM-DD
+> Participants: [agent names and/or humans]
+> Status: Active | Closed
+> Related: [paths to plans, docs, or other conversations]
+> Decision: [one-line summary, or "Pending"]
+
+## Context
+
+What triggered this conversation and why it matters.
+
+## Discussion
+
+### [Participant] — [timestamp or turn number]
+
+[Content of contribution.]
+
+### [Participant] — [timestamp or turn number]
+
+[Content of response.]
+
+## Alternatives Considered
+
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| A | ... | ... | Rejected — [reason] |
+| B | ... | ... | **Selected** |
+
+## Decision
+
+[What was decided and why.]
+
+## Actions
+
+- [ ] [Action item with owner]
+- [ ] [Action item with owner]
+```
+
+### Key Properties
+
+| Property | Rule |
+|----------|------|
+| Front matter | Required — date, participants, status, related files |
+| Decision field | Required — either a one-line summary or "Pending" for open conversations |
+| Discussion section | Required — structured by participant, chronological |
+| Alternatives table | Recommended for decision conversations — forces explicit comparison |
+| Actions section | Recommended — converts decisions into trackable work |
+| Status lifecycle | `Active` → `Closed`. Conversations should not be edited after closing. |
+
+### Conversation Types
+
+| Type | When to Use | Example |
+|------|------------|---------|
+| **Decision** | Evaluating options, choosing a path | "Patent filing strategy: file before or after OSS launch?" |
+| **Review** | Structured feedback on an artifact | "Patent CSS-2026-023 four-lens review" |
+| **Exploration** | Open-ended research or brainstorming | "SurfOS feasibility — chip architecture options" |
+| **Handoff** | Transferring work between agents or sessions | "GTK app — remaining sync work for next session" |
+| **Incident** | Diagnosing and resolving a production issue | "Production outage — FeedbackButton outside Providers" |
+
+### Relationship to Other Artifact Types
+
+| Artifact | Relationship |
+|----------|-------------|
+| **Plans** | Conversations produce decisions; plans record the resulting strategy. A plan's `Related` field links back to the conversation. |
+| **Session checkpoints** | Checkpoints are *summaries*; conversations are *transcripts*. A checkpoint may reference conversations that occurred during the session. |
+| **Queue tasks** | A conversation may spawn queue tasks in its Actions section. |
+| **Docs** | Conversations may update knowledge docs as a side effect of a decision. |
+| **Guides** | Incident conversations should produce or update the relevant guide with gotchas learned. |
+
+### Discovery Order
+
+Conversations are **on-demand** artifacts — they are NOT loaded automatically. They sit outside the default discovery sequence:
+
+```
+CONTEXT.md → surfcontext.json → docs/ → guides/ → agents/ → skills/ → queue → plans/
+                                                                                  ↑
+                                                            conversations referenced from plans
+```
+
+An agent should only load a conversation when:
+1. A plan or doc explicitly references it in a `Related` field
+2. The agent needs to understand *why* a decision was made, not just *what* was decided
+3. Resuming work from a handoff conversation
+
+### Agent Behavior
+
+1. **Creating conversations.** Agents SHOULD create a conversation artifact when making a non-obvious decision that affects multiple files or has long-term consequences.
+2. **Closing conversations.** When a decision is reached, update `Status: Closed`, fill the Decision section, and create any resulting plan or queue task.
+3. **Referencing conversations.** Plans and docs should link to the conversation that produced them: `> Decision record: .context/conversations/YYYY-MM-DD-topic.md`
+4. **Never editing closed conversations.** Closed conversations are append-only. If a decision is revisited, create a new conversation referencing the old one.
+
+### surfcontext.json Schema Addition
+
+```json
+{
+  "canonical": {
+    "conversationsDir": ".context/conversations"
+  },
+  "sync": {
+    "conversations": {
+      "source": ".context/conversations",
+      "targets": [
+        { "repo": "../other-repo", "dest": ".context/conversations", "include": ["relevant-topic.md"] }
+      ]
+    }
+  }
+}
+```
+
+### Anti-Patterns
+
+| Anti-Pattern | Fix |
+|-------------|-----|
+| Logging every interaction as a conversation | Only create conversations for decisions, reviews, incidents — not routine work |
+| Conversations without decisions | Every conversation must reach a conclusion or be explicitly marked "Pending" |
+| Editing closed conversations | Create a new conversation that references the old one |
+| Using conversations instead of checkpoints | Checkpoints are for session state; conversations are for reasoning |
+| Conversations without Related links | Always link to the plans/docs that prompted or resulted from the conversation |
+
+### Open Questions
+
+1. **Naming.** Is `.context/conversations/` the right directory, or should this live inside `plans/conversations/` to respect the temporal nature of conversations?
+2. **Token impact.** Conversations can be long. Should the format mandate a `## Summary` section for token-efficient loading?
+3. **Machine-readable front matter.** Should conversations use YAML front matter (parseable) or the blockquote format used by plans (consistent with existing ARDS conventions)?
+4. **Cross-repo sync.** Are conversations ever worth syncing to other repos, or are they always repo-local?
+5. **Relationship to MCP.** Should MCP tools expose conversation search/retrieval (e.g., `surfcontext_search_conversations`)?
+
+---
+
+## Appendix D: User-Level Context
+
+> **Status: RATIFIED in v4.0 as Sections 30–31.** This appendix is retained as the detailed reference for the user-level directory layout, preferences schema, and contribution workflow. Where this appendix and Sections 30–31 differ, the sections are normative. Ratification resolved the open questions below as follows: (1) storage — the cloud workspace is the source of truth and local `.context/` is a cache materialized by `surf pull`; (2) sync conflicts — local wins for `repo` scope, cloud wins for workspace scopes; (3) workspace discovery — via the platform API behind the pinned credential; (4) offline — cached shared docs remain readable, writes queue as local scratch (Section 31); (5) contributed docs belong to the workspace, reversibly archivable by an admin, with the contributor's original untouched; (6) cross-workspace references are always explicit, never automatic; (7) migration from platform-specific user directories is a tooling concern, not a spec requirement.
+
+### Motivation
+
+A developer's knowledge doesn't live in one repo. They work across multiple projects, organizations, and teams — often in a single day. Today that cross-cutting context exists nowhere: it's in their head, scattered across Slack threads, or lost between sessions.
+
+ARDS solves repo-level context. This extension solves three additional layers:
+
+| Layer | Scope | Example |
+|-------|-------|---------|
+| **Repo** | One codebase | Architecture, conventions, active work |
+| **Personal** | One person, all repos | Preferences, code patterns, career notes |
+| **Personal-workspace** | One person within one team | Private draft docs, meeting notes, ideas not ready to share |
+| **Workspace** | One team, all members | Shared architecture decisions, onboarding guides, team conventions |
+
+### Directory Structure
+
+User-level context lives at `~/.context/` (or a platform-managed equivalent):
+
+```
+~/.context/
+  preferences.json                       # User preferences and agent config
+
+  personal/                              # YOUR stuff — private, follows you everywhere
+    notes/                               # Global personal notes (not workspace-specific)
+      code-patterns.md
+      debugging-playbook.md
+    conversations/                       # Personal decision logs
+      2026-02-10-career-direction.md
+
+  workspaces/                            # Workspace-scoped content
+    cloudsurf/                           # Workspace slug (matches platform URL)
+      personal/                          # Your private notes FOR this workspace
+        notes/
+          patent-idea-draft.md
+          sprint-retrospective.md
+        drafts/                          # Docs being prepared for contribution
+          architecture-v2.md
+        conversations/
+          2026-02-10-pricing-thoughts.md
+      shared/                            # Team-visible docs (contributed by anyone)
+        docs/
+          architecture.md
+          onboarding.md
+        conversations/
+          2026-02-10-gtk-vs-electron.md
+        guides/
+          deploying-amplify.md
+    acme/
+      personal/
+        notes/
+          client-relationship-notes.md
+      shared/
+        docs/
+          api-conventions.md
+```
+
+### Relationship to Repo-Level `.context/`
+
+Repo-level `.context/` (ARDS v1-3) and user-level `~/.context/` coexist. They are separate trees with separate purposes:
+
+| Aspect | Repo `.context/` | User `~/.context/` |
+|--------|-----------------|-------------------|
+| Lives in | Git repo | Home directory or cloud |
+| Versioned by | Git | The workspace platform |
+| Shared via | Clone / fork | Workspace membership |
+| Contains | Repo-specific agents, docs, skills | User preferences, workspace notes, shared team docs |
+| Edited by | Anyone with repo access | The user (personal) or team members (shared) |
+
+An agent working in a repo sees the **merged view** of all applicable layers.
+
+### Merge Semantics
+
+When an agent loads context, layers merge in priority order (highest wins):
+
+| Priority | Layer | Source | Rationale |
+|----------|-------|--------|-----------|
+| 1 (highest) | **Repo** | `./context/` | Repo-specific facts always win |
+| 2 | **Workspace shared** | `~/.context/workspaces/{slug}/shared/` | Team conventions override personal preference |
+| 3 | **Personal-workspace** | `~/.context/workspaces/{slug}/personal/` | Your context for this team |
+| 4 (lowest) | **Personal global** | `~/.context/personal/` | Defaults and preferences |
+
+**Conflict resolution rules:**
+
+1. Higher-priority layers override lower-priority layers for the same topic.
+2. If a repo doc and a workspace doc cover the same subject, the repo doc wins (it's more specific).
+3. Preferences merge additively — user preferences apply unless the repo or workspace explicitly overrides them.
+4. Agents should note when they're using a lower-priority source: "Using your personal debugging guide (no repo-level guide found)."
+
+### Preferences Schema
+
+`~/.context/preferences.json` defines user-level configuration that agents respect across all repos:
+
+```json
+{
+  "version": "1.0",
+  "identity": {
+    "name": "Brady Davis",
+    "timezone": "America/Los_Angeles",
+    "role": "founder"
+  },
+  "workingStyle": {
+    "communication": "concise",
+    "codeComments": "minimal",
+    "commitStyle": "conventional",
+    "planningPreference": "plan-before-implement"
+  },
+  "agentPreferences": {
+    "defaultModel": "opus",
+    "confirmBefore": ["destructive-operations", "public-commits", "external-api-calls"],
+    "skipConfirmation": ["file-reads", "local-tests", "local-builds"]
+  },
+  "workspaceOverrides": {
+    "cloudsurf": {
+      "role": "founder",
+      "canApprove": true,
+      "ipSafety": { "noAiCoAuthor": true }
+    },
+    "acme": {
+      "role": "contractor",
+      "canApprove": false,
+      "ipSafety": { "noAiCoAuthor": false }
+    }
+  }
+}
+```
+
+**Key properties:**
+
+| Field | Purpose |
+|-------|---------|
+| `identity` | Who you are — agents use this for commit messages, communication |
+| `workingStyle` | How you like to work — agents adapt their behavior |
+| `agentPreferences` | What agents should and shouldn't ask about |
+| `workspaceOverrides` | Per-workspace role and permission overrides |
+
+Workspace overrides are critical: they let the same person have different agent behaviors in different contexts. A founder approves force-pushes in their own company; a contractor never should.
+
+### Contribution Workflow
+
+The **"Contribute to Workspace"** action promotes a personal doc to a team-shared doc:
+
+```
+~/.context/workspaces/cloudsurf/personal/drafts/architecture-v2.md
+                         │
+                         │  "Contribute to Workspace"
+                         ▼
+~/.context/workspaces/cloudsurf/shared/docs/architecture-v2.md
+```
+
+**Contribution rules:**
+
+1. **Copy, not move.** The personal draft remains in `personal/drafts/` as a historical record. The shared version is a new file that can diverge.
+2. **Attribution preserved.** The shared doc's front matter records who contributed it and when:
+   ```markdown
+   > Contributed by: Brady Davis
+   > Contributed on: 2026-02-10
+   > Origin: personal draft
+   ```
+3. **Team members can edit shared docs.** Once contributed, the doc belongs to the workspace. Anyone on the team can update it.
+4. **Contributions are visible.** The platform notifies the workspace: "Brady contributed 'Architecture v2' to CloudSurf shared docs."
+5. **Reversible.** A workspace admin can archive a contributed doc. The contributor's personal draft is unaffected.
+
+### Workspace Isolation
+
+Workspaces are hard boundaries. Content never leaks between workspaces unless explicitly contributed to multiple:
+
+| Action | Allowed | Explanation |
+|--------|---------|-------------|
+| Read personal docs from any workspace | Yes | Your stuff, your rules |
+| Read shared docs from your workspaces | Yes | You're a member |
+| Read shared docs from other workspaces | No | Not a member |
+| Contribute same doc to multiple workspaces | Yes | Explicit cross-share |
+| Auto-sync between workspaces | No | Must be manual/explicit |
+| Agent accessing wrong workspace context | No | Active workspace gates context loading |
+
+This isolation is especially important for IP safety. A developer working on both a proprietary product and an open-source project must never have proprietary context leak into OSS conversations.
+
+### Discovery Order (Extended)
+
+When user-level context exists, the discovery order extends:
+
+```
+1. Repo CONTEXT.md                       # Repo identity
+2. Repo surfcontext.json                 # Repo config
+3. ~/.context/preferences.json           # User preferences (if present)
+4. Repo .context/docs/                   # Repo knowledge
+5. Workspace shared docs                 # Team knowledge (active workspace)
+6. Repo .context/guides/                 # Repo how-to
+7. Workspace shared guides               # Team how-to
+8. Personal-workspace notes              # Your notes for this team
+9. Personal global notes                 # Your cross-workspace knowledge
+10. Repo .context/agents/                # Agent activation
+11. Repo .context/skills/                # Skill activation
+12. Repo .context/queue.md               # Task queue
+13. Repo plans/                          # Time-stamped work
+```
+
+Steps 3, 5, 7, 8, and 9 are new. They're all **on-demand** — loaded only when relevant to the current task.
+
+### surfcontext.json Schema Addition
+
+User-level context adds a `userContext` block to surfcontext.json:
+
+```json
+{
+  "userContext": {
+    "enabled": true,
+    "personalDir": "~/.context/personal",
+    "workspacesDir": "~/.context/workspaces",
+    "preferencesFile": "~/.context/preferences.json",
+    "activeWorkspace": "cloudsurf"
+  }
+}
+```
+
+This can live in the repo's surfcontext.json (to opt a repo into user-level context) or in a global `~/.context/surfcontext.json` (to configure user-level defaults).
+
+### CLI Integration
+
+The `surf` CLI extends with user-level commands:
+
+```
+surf context                              # Show active workspace + merged context summary
+surf context list                         # List all workspaces
+surf context switch <workspace>           # Set active workspace
+surf context init                         # Create ~/.context/ with preferences.json
+surf contribute <file>                    # Promote personal draft to workspace shared
+surf contribute <file> --to <workspace>   # Contribute to specific workspace
+surf pull                                 # Sync workspace shared docs to local cache
+surf push                                 # Sync local personal docs to cloud
+```
+
+### Platform Integration (Reference Implementation)
+
+In Surfspace (the reference workspace platform), user-level context maps to product features:
+
+| ARDS Concept | Platform Feature |
+|-------------|-----------------|
+| `~/.context/personal/` | Personal workspace — private knowledge base |
+| `~/.context/workspaces/{slug}/personal/` | Private notes within a workspace |
+| `~/.context/workspaces/{slug}/shared/` | Shared workspace docs |
+| `preferences.json` | User settings + agent configuration |
+| "Contribute to Workspace" | Promotes a private doc to workspace scope |
+| Workspace switching | Workspace selector scopes all context |
+| MCP server | Serves workspace context to AI agents behind a workspace-pinned credential (Section 18) |
+
+### Anti-Patterns
+
+| Anti-Pattern | Fix |
+|-------------|-----|
+| Storing repo-specific docs in user-level context | Keep repo docs in repo `.context/`. User context is for cross-cutting knowledge. |
+| Using personal-workspace as a private fork of shared docs | Personal-workspace is for your notes and drafts, not shadow copies of team docs. |
+| Contributing everything | Contribute docs that help the team. Keep rough notes personal. |
+| No workspace isolation for sensitive projects | Always use separate workspaces for separate organizations. Never mix client and personal IP. |
+| Preferences that override safety checks | `skipConfirmation` should never include destructive or public-facing actions. |
+| Sharing preferences.json | Preferences are personal. Never commit to a shared repo. Add to .gitignore. |
+
+### Open Questions
+
+1. **Storage backend.** Should `~/.context/` be a real directory on disk, or an abstraction backed by cloud storage? Real files are simpler and work offline. Cloud storage enables cross-machine sync.
+2. **Sync protocol.** How does `surf pull/push` handle conflicts between local and cloud? Last-write-wins, or three-way merge?
+3. **Workspace discovery.** How does a user's CLI know which workspaces they belong to? API call to the platform, or local config file?
+4. **Offline mode.** If the platform is unreachable, should agents still see cached workspace shared docs? Probably yes — freshness over availability is the wrong tradeoff for dev tools.
+5. **Conversation ownership.** When a personal conversation is contributed to a workspace, who owns it? Can the contributor delete it from shared after contributing?
+6. **Cross-workspace references.** Can a doc in workspace A reference a doc in workspace B? This breaks isolation but may be necessary for holding companies with multiple product workspaces.
+7. **Migration.** For users with existing `~/.claude/` directories, should `surf migrate` offer to restructure into `~/.context/`?
+
+---
+
+*ARDS is an open standard created by CloudSurf Software LLC. Specification maintained at [surfcontext.org](https://surfcontext.org). Source at [github.com/cloudsurf-software/surfcontext](https://github.com/cloudsurf-software/surfcontext).*

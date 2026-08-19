@@ -1,0 +1,19 @@
+[package]
+name = "surfcontext-website"
+version = "4.0.0"
+edition = "2024"
+description = "surfcontext.org — the ARDS (Agent-Ready Documentation Standard) specification site"
+authors = ["CloudSurf Software LLC"]
+license = "MIT"
+repository = "https://github.com/cloudsurf-software/surfcontext"
+publish = false
+
+[dependencies]
+axum = { version = "0.8", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["fs"] }
+serde = { version = "1", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+surf-parse = { git = "https://github.com/cloudsurf-software/surf-parse.git", tag = "v0.16.0", default-features = false }

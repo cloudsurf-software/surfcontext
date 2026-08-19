@@ -1,0 +1,1151 @@
+/* SurfContext — Project-specific styles
+   Layered on top of surf-ui.css (shared component library).
+   Only add styles here that are unique to surfcontext.org. */
+
+/* === Nav GitHub icon (surfcontext-specific) === */
+.nav-github {
+    color: var(--text-muted);
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    transition: color 150ms ease;
+}
+
+.nav-github:hover { color: var(--text); }
+.nav-github svg { width: 20px; height: 20px; fill: currentColor; }
+
+/* === Hero extras === */
+.hero-grid {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-code {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.hero-compat {
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.hero-compat strong { color: #22c55e; }
+
+/* === Fragmentation section === */
+.fragmentation-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.fragmentation-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    transition: border-color 200ms ease;
+}
+
+.fragmentation-card:hover { border-color: var(--border-light); }
+
+.fragmentation-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.fragmentation-dot-red {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.fragmentation-dot-green {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.fragmentation-platform {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin-bottom: 2px;
+}
+
+.fragmentation-file {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.fragmentation-solution { margin-top: 8px; }
+
+.fragmentation-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.fragmentation-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.fragmentation-divider-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.fragmentation-answer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid #22c55e;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.fragmentation-answer .fragmentation-platform {
+    font-size: 1.0625rem;
+    color: #22c55e;
+}
+
+.fragmentation-answer .fragmentation-file { font-size: 0.875rem; }
+
+/* === Step cards (override surf-ui flex-row to column for multi-child layout) === */
+.step-card {
+    flex-direction: column;
+}
+
+/* === Card step numbers === */
+.card-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.card-step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.card-icon {
+    color: var(--accent);
+    margin-bottom: 14px;
+    font-size: 1.5rem;
+}
+
+/* === Spec page (layout + TOC handled by inline styles in spec.html) === */
+/* Only keep spec-table styles here — layout/sidebar/toc/content fully in template */
+
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 0.875rem;
+}
+
+.spec-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+}
+
+.v3-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+/* === Discovery steps (horizontal pipeline on landing) === */
+.discovery-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+}
+
+.discovery-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+}
+
+.discovery-step code { font-size: 0.8125rem; font-weight: 600; }
+
+.discovery-step span {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.discovery-arrow {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    padding: 0 6px;
+    flex-shrink: 0;
+}
+
+/* === Discovery list (vertical, whats-new page) === */
+.discovery-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.discovery-list-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 200ms ease;
+}
+
+.discovery-list-item:hover { border-color: var(--border-light); }
+
+.discovery-list-body { flex: 1; min-width: 0; }
+
+.discovery-list-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.discovery-list-top code { font-weight: 700; font-size: 0.9375rem; }
+
+.discovery-tokens {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.discovery-list-body > p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* === Doc type labels === */
+.doc-type-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.doc-type-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* === Superset mapping list === */
+.superset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.superset-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 200ms ease;
+}
+
+.superset-item:hover { border-color: var(--border-light); }
+
+.superset-label {
+    font-weight: 700;
+    font-size: 0.875rem;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.superset-arrow {
+    color: var(--text-muted);
+    font-size: 1.125rem;
+    flex-shrink: 0;
+}
+
+.superset-target {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* === Step card row (title + badge) === */
+.step-card-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+/* === Stats grid variants === */
+.stats-grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+/* === Capability grid variants === */
+.capability-grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+/* === CTA section === */
+.cta-section {
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.cta-section .section-headline { margin-bottom: 16px; }
+
+.cta-section .section-subtitle {
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 32px;
+}
+
+.cta-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.cta-content {
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+/* === Tool cards === */
+.tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tool-card h3 { font-weight: 700; font-size: 1.0625rem; }
+.tool-card p { color: var(--text-muted); font-size: 0.9375rem; line-height: 1.6; }
+
+/* === Download / Getting Started forms === */
+.download-form { max-width: 640px; }
+
+.stack-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.stack-btn {
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms ease;
+    font-family: inherit;
+}
+
+.stack-btn:hover {
+    border-color: var(--border-light);
+    color: var(--text);
+}
+
+.stack-btn.selected {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* === Callout (spec page) === */
+.callout {
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+.callout-info {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: var(--text);
+}
+
+.callout-info strong { color: var(--accent); }
+
+/* === Platform table (landing page) === */
+.platform-table-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+/* === Responsive overrides === */
+@media (max-width: 768px) {
+    .nav-github {
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Fragmentation */
+    .fragmentation-grid { grid-template-columns: 1fr; gap: 8px; }
+    .fragmentation-answer { max-width: 100%; }
+
+    /* Stats 6-col → 3-col */
+    .stats-grid-6 { grid-template-columns: repeat(3, 1fr); }
+
+    /* Capability 3-col → 1-col */
+    .capability-grid-3 { grid-template-columns: 1fr; }
+
+    /* Discovery steps vertical */
+    .discovery-steps { flex-direction: column; align-items: stretch; }
+    .discovery-arrow { transform: rotate(90deg); text-align: center; padding: 4px 0; }
+
+    /* Superset */
+    .superset-item { flex-wrap: wrap; gap: 8px; }
+    .superset-label { min-width: auto; }
+    .discovery-tokens { margin-left: 0; }
+}
+
+/* ============================================================
+   SURFDOC BLOCK OVERRIDES
+   ============================================================ */
+
+/* Sections — override surfdoc.css full-bleed (which causes horizontal scroll) */
+.surfdoc-section {
+    border-top: 1px solid var(--border);
+}
+
+.surfdoc-section-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 80px 24px;
+}
+
+/* Center the subtitle paragraph that follows section-header */
+.surfdoc-section-inner > p {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1.0625rem;
+    max-width: 600px;
+    margin: -16px auto 48px;
+    line-height: 1.6;
+}
+
+.surfdoc-section-header {
+    margin-bottom: 24px;
+}
+
+.surfdoc-section-header h2 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0;
+}
+
+.surfdoc-section-header p {
+    font-size: 1.0625rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.surfdoc-section-headline {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.surfdoc-section-subtitle {
+    color: var(--text-muted);
+    font-size: 1.0625rem;
+    margin-bottom: 48px;
+}
+
+/* Override surfdoc.css full-bleed margin trick that causes horizontal scroll */
+.section-dark {
+    background: var(--surface);
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.section-muted {
+    background: var(--surface);
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Hero */
+.surfdoc-hero {
+    margin: 0;
+    padding: 80px 24px 72px;
+    text-align: center;
+}
+
+.surfdoc-hero-inner {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.surfdoc-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent-light);
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 999px;
+    padding: 6px 16px;
+    margin-bottom: 28px;
+}
+
+.surfdoc-hero-headline {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+}
+
+.surfdoc-hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    max-width: 560px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
+}
+
+.surfdoc-hero-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.surfdoc-hero-btn {
+    padding: 12px 28px;
+    border-radius: var(--radius);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    min-height: 48px;
+}
+
+.surfdoc-hero-btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.surfdoc-hero-btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.surfdoc-hero-btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.surfdoc-hero-btn-secondary:hover {
+    background: var(--surface);
+    border-color: var(--border-light);
+}
+
+/* Features */
+.surfdoc-features {
+    border: none;
+    padding: 0;
+}
+
+.surfdoc-feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    transition: border-color 200ms ease;
+}
+
+.surfdoc-feature-card:hover {
+    border-color: var(--border-light, var(--accent));
+}
+
+.surfdoc-feature-icon {
+    color: var(--accent);
+}
+
+.surfdoc-feature-title {
+    font-weight: 700;
+    font-size: 1.0625rem;
+}
+
+.surfdoc-feature-body {
+    color: var(--text-muted);
+    line-height: 1.6;
+    font-size: 0.9375rem;
+}
+
+/* Stats */
+.surfdoc-stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 32px 24px;
+    max-width: 960px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+
+.surfdoc-stat {
+    text-align: center;
+}
+
+.surfdoc-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.surfdoc-stat-label {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* Steps */
+.surfdoc-steps {
+    max-width: 640px;
+    margin: 32px auto 0;
+    list-style: none;
+    padding: 0;
+}
+
+.surfdoc-step {
+    display: flex;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    background: none;
+}
+
+.surfdoc-step:last-child {
+    border-bottom: none;
+}
+
+.surfdoc-step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.surfdoc-step-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.surfdoc-step-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 8px;
+}
+
+.surfdoc-step-body {
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+/* Comparison table */
+.surfdoc-comparison {
+    max-width: 640px;
+    margin: 32px auto 0;
+    font-size: 0.9375rem;
+    border-collapse: collapse;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.surfdoc-comparison th {
+    padding: 12px 16px;
+    background: var(--background);
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-align: left;
+}
+
+.surfdoc-comparison td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+}
+
+.surfdoc-comparison tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.surfdoc-comparison-highlight {
+    background: transparent;
+    text-align: center;
+}
+
+.surfdoc-check {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background: #22c55e;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0;
+    vertical-align: middle;
+    position: relative;
+}
+
+.surfdoc-check::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 8px;
+    width: 5px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.surfdoc-dash {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background: var(--border);
+    border-radius: 50%;
+    font-size: 0;
+    vertical-align: middle;
+    position: relative;
+}
+
+.surfdoc-dash::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 6px;
+    width: 10px;
+    height: 2px;
+    background: var(--text-muted);
+    border-radius: 1px;
+}
+
+/* Before-After */
+.surfdoc-before-after {
+    max-width: 640px;
+    margin: 32px auto 0;
+}
+
+.surfdoc-ba-heading {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.surfdoc-ba-before,
+.surfdoc-ba-after {
+    display: grid;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.surfdoc-ba-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background);
+    font-size: 0.9375rem;
+}
+
+.surfdoc-ba-item strong {
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.surfdoc-ba-item span {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.surfdoc-ba-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.surfdoc-ba-dot-red {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.surfdoc-ba-dot-green {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+.surfdoc-ba-item-green {
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.surfdoc-ba-item-green strong {
+    color: #22c55e;
+}
+
+.surfdoc-ba-transition {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.surfdoc-ba-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.surfdoc-ba-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+/* Pipeline */
+.surfdoc-pipeline {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 16px 0;
+}
+
+/* Product cards */
+.surfdoc-product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.surfdoc-product-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border-radius: var(--radius);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+    text-decoration: none;
+    margin-top: 16px;
+    transition: all 150ms ease;
+}
+
+.surfdoc-product-cta:hover {
+    background: var(--accent-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Data tables */
+.surfdoc-data {
+    max-width: 960px;
+    margin: 0 auto;
+    font-size: 0.875rem;
+}
+
+.surfdoc-data th,
+.surfdoc-data td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+}
+
+.surfdoc-data th {
+    background: var(--surface);
+    font-weight: 600;
+}
+
+/* Code blocks */
+.surfdoc-code {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+/* CTA buttons — center within section */
+.surfdoc-section-inner > .surfdoc-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: var(--radius);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    min-height: 48px;
+    text-decoration: none;
+    transition: all 150ms ease;
+}
+
+/* Center the CTA row — the last section acts as a CTA */
+.surfdoc-section:last-of-type .surfdoc-section-inner {
+    text-align: center;
+}
+
+.surfdoc-section:last-of-type .surfdoc-section-inner > .surfdoc-cta {
+    margin: 4px 6px;
+}
+
+.surfdoc-cta-primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.surfdoc-cta-primary:hover {
+    background: var(--accent-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.surfdoc-cta-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.surfdoc-cta-secondary:hover {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border-light);
+}
+
+/* Callout blocks */
+.surfdoc-callout {
+    border-radius: var(--radius);
+    max-width: 720px;
+    margin: 24px auto;
+}
+
+/* Responsive — surfdoc block overrides */
+@media (max-width: 768px) {
+    /* Hero */
+    .surfdoc-hero {
+        padding: 56px 16px 48px;
+    }
+
+    .surfdoc-hero-headline {
+        font-size: 2rem;
+    }
+
+    .surfdoc-hero-subtitle {
+        font-size: 1.0625rem;
+        margin-bottom: 32px;
+    }
+
+    .surfdoc-hero-btn {
+        padding: 10px 20px;
+        font-size: 0.875rem;
+        min-height: 44px;
+        width: 100%;
+    }
+
+    .surfdoc-hero-actions {
+        flex-direction: column;
+        align-items: center;
+        max-width: 280px;
+        margin: 0 auto;
+    }
+
+    /* Sections */
+    .surfdoc-section-inner {
+        padding: 56px 16px;
+    }
+
+    .surfdoc-section-inner > p {
+        font-size: 0.9375rem;
+        margin-bottom: 32px;
+    }
+
+    .surfdoc-section-header h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Before-After */
+    .surfdoc-ba-item {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .surfdoc-ba-item strong {
+        min-width: auto;
+        font-size: 0.875rem;
+    }
+
+    .surfdoc-ba-item span {
+        font-size: 0.75rem;
+    }
+
+    /* Steps */
+    .surfdoc-step-title {
+        font-size: 0.9375rem;
+    }
+
+    /* Comparison table */
+    .surfdoc-comparison {
+        font-size: 0.8125rem;
+    }
+
+    .surfdoc-comparison th,
+    .surfdoc-comparison td {
+        padding: 10px 12px;
+    }
+
+    /* CTA buttons */
+    .surfdoc-section-inner > .surfdoc-cta {
+        display: flex;
+        width: 100%;
+        max-width: 280px;
+        margin: 4px auto;
+    }
+}
+
+/* ============================================================
+   Site overrides on surf-parse v0.16 SURFDOC_CSS (loads after
+   surf-ui.css, so equal-specificity rules here win).
+   ============================================================ */
+
+/* Stat tiles: keep big numbers on one line at any tile width. */
+.surfdoc-stat-value {
+    font-size: clamp(1.35rem, 2.4vw, 2.1rem);
+    white-space: nowrap;
+}
+
+/* Product cards: the 320px base cap leaves dead space in a full-width
+   content column — let cards breathe. */
+.surfdoc-product-card {
+    max-width: 640px;
+    width: 100%;
+}
+
+/* Stat labels: wrap between words only, never mid-word. */
+.surfdoc-stat-label {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+}

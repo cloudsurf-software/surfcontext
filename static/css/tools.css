@@ -1,0 +1,256 @@
+/* Tools page styles — layered on surf-ui.css + app.css */
+
+/* Page container */
+.page-container {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+
+/* Page header */
+.page-header {
+    margin-bottom: 3rem;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .page-title {
+        font-size: 2.5rem;
+    }
+}
+
+.page-subtitle {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+/* Tool sections */
+.tool-section {
+    margin-bottom: 2rem;
+}
+
+/* Tool cards */
+.tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.tool-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 0;
+}
+
+.tool-card-header-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.tool-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.tool-card-subtitle {
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+}
+
+.tool-card-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.tool-card-desc {
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.tool-card-desc strong {
+    color: var(--text);
+}
+
+/* Feature lists inside tool cards */
+.tool-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.tool-feature-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.625rem;
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.tool-feature-list li::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+    top: -1px;
+}
+
+/* Badge variants */
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.badge-dot-green {
+    background: #22c55e;
+}
+
+.badge-dot-yellow {
+    background: #eab308;
+}
+
+.badge-coming-soon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: rgba(234, 179, 8, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.25);
+    color: #eab308;
+    white-space: nowrap;
+}
+
+.badge-available {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+/* Code blocks inside tool cards */
+.tool-card .code-block {
+    margin-bottom: 1rem;
+}
+
+.tool-card .code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* Inline code */
+.inline-code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    padding: 2px 6px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--accent-light);
+}
+
+/* MCP table */
+.mcp-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.mcp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.mcp-table th {
+    text-align: left;
+    padding: 0.625rem 1rem;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--text);
+}
+
+.mcp-table td {
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+.mcp-table tbody tr:hover {
+    background: var(--surface-hover);
+}
+
+/* Link accent */
+.link-accent {
+    color: var(--accent-light);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link-accent:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+/* Bottom callout box */
+.callout-box {
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.callout-box .callout-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.callout-box .callout-desc {
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .page-container {
+        padding: 2rem 1rem;
+    }
+
+    .tool-card-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}

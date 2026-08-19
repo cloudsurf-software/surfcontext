@@ -1,0 +1,110 @@
+---
+title: SurfContext — One Spec. Every AI Coding Tool.
+description: The open standard for agent-ready documentation and workspaces. Define your project context once — every major AI coding agent understands it, in the repo or in the cloud workspace.
+---
+
+::style
+accent: #3b82f6
+font: inter
+::
+
+::hero[badge="ARDS v4.0 Specification"]
+# The open standard for agent-ready documentation and workspaces
+
+One format. Every AI coding agent. Define your project context once — all major AI coding agents understand it automatically. New in v4.0: the same standard now extends into the cloud workspace, so the documents your team shares and the context your agents see are the same objects.
+
+[Read the Spec](/spec){primary}
+[What's New in v4.0](/whats-new)
+[Quick Start](/getting-started)
+::
+
+::section[bg=dark]
+## 5 AI tools. 5 config formats. 0 standards.
+
+Every AI coding agent invented its own way to read project context. Your team maintains duplicate files that drift out of sync.
+
+::before-after[transition="replaced by"]
+### Before
+- Claude Code | CLAUDE.md
+- Codex CLI | AGENTS.md
+- Cursor | .cursorrules
+- GitHub Copilot | .github/copilot-instructions.md
+- Windsurf | .windsurfrules
+
+### After
+- SurfContext | CONTEXT.md + .context/ + surfcontext.json
+::
+::
+
+::section
+## v4.0: from file standard to workspace standard
+
+Through v3, context was something a repository presented to an agent. In v4.0, knowledge and context unify: the documents a team shares and the context an agent sees are the same objects, living in a cloud workspace the agent reaches through MCP. The file layer is unchanged and fully valid on its own — every workspace feature is additive and optional, and a valid v3 project is a valid v4 project.
+
+::features[cols=3]
+### Workspace Model & Scopes {icon=globe}
+Five scopes — personal, workspace-private, workspace, repo, public — with hard, credential-enforced isolation boundaries.
+
+### Workspace as Command Center {icon=settings}
+Knowledge lives and agents launch in the workspace. The git repo becomes tooling shell and archive, with a file-layer offline fallback and mandatory export.
+
+### Tasks & Stages {icon=check}
+An 8-stage lifecycle from todo to done, with stage-bound artifacts that serve as agent memory across sessions.
+
+### Agent Launch & Playbooks {icon=user}
+Declared tool allow/deny lists, stage-authority ceilings, heartbeats, and metering for every launched agent.
+
+### Skill Runtime & Executable Plans {icon=file}
+The dated plan doc becomes the runtime's input — journaled deterministic resume with budget ceilings.
+
+### MCP Integration {icon=code}
+A versioned, append-only tool vocabulary with capability tiers, gated availability, workspace-pinned credentials, and OAuth 2.1.
+::
+::
+
+::section[bg=dark]
+## How it works
+
+Three files. Universal compatibility. Zero lock-in.
+
+::steps
+### Write your context {time="5 min"}
+Create `CONTEXT.md` and a `.context/` directory with your agent definitions and knowledge docs.
+
+### Target platforms {time="2 min"}
+Add `surfcontext.json` to declare which AI platforms to generate config files for.
+
+### AI auto-discovers {time="0 min"}
+Open your project in any supported AI tool. It reads your context automatically — no copy-paste, no per-tool config.
+
+### Connect a workspace {time="Optional"}
+Adopt the v4 workspace layer when you're ready. Agents reach the same knowledge through MCP, and the file layer remains your export and offline fallback.
+::
+::
+
+::section
+## Platform compatibility
+
+SurfContext generates the right config file for each platform from a single source of truth.
+
+::comparison[highlight="Status"]
+| Generated File | Status |
+|---------------|--------|
+| CLAUDE.md | yes |
+| AGENTS.md | yes |
+| .cursorrules | yes |
+| .github/copilot-instructions.md | yes |
+| .windsurfrules | yes |
+::
+::
+
+::section[bg=dark]
+## Ready to standardize your AI context?
+
+Get started in under 5 minutes. No dependencies, no build step, no lock-in.
+
+::cta[label="Get Started" href="/getting-started" primary icon=arrow-right]
+::
+::cta[label="Read the Full Spec" href="/spec" icon=book]
+::
+::
