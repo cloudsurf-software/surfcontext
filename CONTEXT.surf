@@ -63,8 +63,10 @@ ratified spec moved on. Amend `SPEC.surf` and the site follows.
 | `src/routes/tools.rs` | `/tools` — renders `content/tools.surf` |
 | `src/routes/whats_new.rs` | `/whats-new` — renders `content/whats_new.surf` |
 | `src/routes/download.rs` | `POST /api/download` — builds the starter-kit zip in memory |
+| `src/routes/talks.rs` | `/talks` lists the decks; `/talks/{slug}` serves one full-screen via surf-parse `to_slides_html` |
 | `src/html.rs` | Base page shell: head, nav, footer, theme bootstrap |
 | `content/*.surf` | Page source for every route except getting-started |
+| `content/talks/*.surf` | Slide decks (`::deck` / `::slide`), one per talk, registered in `TALKS` |
 | `tools/ards-lint.py` | Conformance and drift linter (the CI gate) |
 | `tools/surfcontext-sync.sh` | Reference sync — Core injection into harness root files |
 | `tools/ards-tests.sh` | Tools battery; must stay green |
@@ -82,6 +84,7 @@ files are compiled into the binary with `include_str!`, so a content change is a
 SPEC.surf          --> /spec        (surf-parse)
 content/*.surf     --> /, /tools, /whats-new  (surf-parse)
 content/*.html     --> /getting-started       (served as-is)
+content/talks/     --> /talks/{slug}          (surf-parse slides)
 src/routes/        --> route modules
 src/html.rs        --> page shell
 static/, assets/   --> mounted directories

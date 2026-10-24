@@ -9,10 +9,9 @@ FAIL=0
 
 check() {
   local desc="$1" url="$2" expected_status="${3:-200}" body_contains="${4:-}"
-  local status body
+  local status
 
   status=$(curl -s -o /tmp/smoke-body -w '%{http_code}' "$url")
-  body=$(cat /tmp/smoke-body)
 
   if [ "$status" != "$expected_status" ]; then
     echo "FAIL: $desc — expected $expected_status, got $status"
@@ -20,7 +19,7 @@ check() {
     return
   fi
 
-  if [ -n "$body_contains" ] && ! echo "$body" | grep -qi "$body_contains"; then
+  if [ -n "$body_contains" ] && ! grep -qi -- "$body_contains" /tmp/smoke-body; then
     echo "FAIL: $desc — body missing '$body_contains'"
     FAIL=$((FAIL + 1))
     return
@@ -38,6 +37,9 @@ check "Landing page" "$BASE/" 200 "SurfContext"
 check "Spec page" "$BASE/spec" 200 "ARDS"
 check "Getting started" "$BASE/getting-started" 200 "SurfContext"
 check "What's new" "$BASE/whats-new" 200
+check "Talks index" "$BASE/talks" 200 "ARDS in Ten Minutes"
+check "Talk deck" "$BASE/talks/ards-in-ten-minutes" 200 "data-slides"
+check "Unknown talk 404" "$BASE/talks/no-such-talk" 404
 
 # Static assets
 check "CSS loads" "$BASE/static/css/app.css" 200 "surfdoc"

@@ -1,0 +1,85 @@
+---
+title: "ARDS in Ten Minutes"
+type: presentation
+---
+
+::deck
+title: ARDS in Ten Minutes
+footer: surfcontext.org/talks
+::
+
+::slide[layout=cover kicker="SurfContext"]
+# ARDS in Ten Minutes
+The Agent-Ready Documentation Standard, v5.2
+:::notes
+A short tour: the problem, the three files, what goes in .context/, and how each agent gets its own config.
+:::
+::
+
+::slide[layout=bullets kicker="The problem"]
+## 5 AI tools. 5 config formats. 0 standards.
+- Claude Code reads `CLAUDE.md`
+- Codex CLI reads `AGENTS.md`
+- Cursor reads `.cursor/rules/*.mdc`
+- GitHub Copilot reads `.github/copilot-instructions.md`
+- Windsurf reads `.windsurfrules`
+
+Teams keep duplicate files, and the copies drift apart.
+::
+
+::slide[layout=stat kicker="The fix"]
+# 3 files
+`CONTEXT.surf` · `.context/` · `surfcontext.json`: one source every agent reads
+::
+
+::slide[layout=bullets kicker="How it works"]
+## Write once, generate for each tool
+- **Write your context:** `CONTEXT.surf` at the root, knowledge in `.context/`
+- **Declare your platforms:** list them in `surfcontext.json`
+- **Generate:** each tool gets its own file, distilled from the same source
+- **Open the project:** the agent finds its file. No copy-paste, no per-tool upkeep.
+::
+
+::slide[layout=code kicker="surfcontext.json"]
+## One manifest, three platforms
+```json
+{
+  "format": ".surf",
+  "platforms": ["claude", "codex", "cursor"],
+  "canonical": {
+    "rootContext": "CONTEXT.surf",
+    "docsDir": ".context/docs",
+    "agentsDir": ".context/agents",
+    "skillsDir": ".context/skills"
+  },
+  "generation": {
+    "claude": { "rootContext": "CLAUDE.md" },
+    "codex":  { "rootContext": "AGENTS.md" },
+    "cursor": { "rootContext": ".cursor/rules/context.mdc" }
+  }
+}
+```
+::
+
+::slide[layout=bullets kicker="Beyond the root file"]
+## What the agent can read
+- **`.context/docs/` and `guides/`:** how the system works, and how to change it
+- **`.context/agents/` and `skills/`:** each agent's scope, the files it reads, how it works
+- **`plans/` and `research/`:** what was decided, and why
+- **Session checkpoints:** what was done, what's left, what was found
+::
+
+::slide[layout=bullets kicker="Discovery"]
+## Agents read in a set order
+1. `CONTEXT.surf` and `surfcontext.json`: always loaded
+2. `.context/docs/` and `guides/`: when the topic matches
+3. `.context/agents/` and `skills/`: one file, on dispatch
+4. `plans/`, `research/`, then source code: on demand
+
+A project can override the order in `surfcontext.json`, and tools should respect it.
+::
+
+::slide[layout=cover kicker="Next"]
+# Read the spec
+surfcontext.org/spec · Quick start at surfcontext.org/getting-started
+::

@@ -4,6 +4,7 @@ mod getting_started;
 mod tools;
 mod whats_new;
 mod download;
+mod talks;
 
 use axum::Router;
 
@@ -15,6 +16,7 @@ pub fn router() -> Router {
         .merge(tools::router())
         .merge(whats_new::router())
         .merge(download::router())
+        .merge(talks::router())
 }
 
 #[cfg(test)]
